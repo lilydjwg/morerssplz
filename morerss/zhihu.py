@@ -1,6 +1,7 @@
 from urllib.parse import urljoin
 import datetime
 import json
+import re
 
 import PyRSS2Gen
 from tornado import gen, web
@@ -9,6 +10,8 @@ from tornado.httpclient import AsyncHTTPClient
 from .base import BaseHandler
 
 httpclient = AsyncHTTPClient()
+
+re_br_to_remove = re.compile(r'(?:<br>)+')
 
 class ZhihuZhuanlanHandler(BaseHandler):
   @gen.coroutine
@@ -40,6 +43,7 @@ def parse_time(t):
   return datetime.datetime.strptime(t, '%Y-%m-%dT%H:%M:%S%z')
 
 def process_content(text):
+  text = re_br_to_remove.sub(r'', text)
   return text
 
 def post2rss(baseurl, post, *, digest=False):
