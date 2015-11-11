@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<title>各种转 RSS 服务</title>
+<style type="text/css">
+  body {
+    max-width: 700px;
+    margin: 2em auto;
+  }
+</style>
+<p>本站提供各种转 RSS 服务。已经支持的有：</p>
+
+<h2>知乎专栏</h2>
+<p>将知乎专栏首页地址里的用户名写到 https://rss.lilydjwg.me/zhihuzhuanlan/ 之后即可。如专栏首页是 <a href="http://zhuanlan.zhihu.com/jiandanxinli">http://zhuanlan.zhihu.com/jiandanxinli</a>，则订阅地址为 <a href="https://rss.lilydjwg.me/zhihuzhuanlan/jiandanxinli">https://rss.lilydjwg.me/zhihuzhuanlan/jiandanxinli</a>。</p>
+
+<p>也可以用下边这个表单：</p>
+<script>
+  var zhihuzhuanlan_go = function(){
+    var u = 'https://rss.lilydjwg.me/zhihuzhuanlan/';
+    var l = document.getElementById('zhihuzhuanlan-url').value;
+    if(l.indexOf('http://zhuanlan.zhihu.com/') !== 0){
+      alert('请填写知乎专栏链接。');
+      return;
+    }
+    u += l.split('/')[3];
+    window.open(u);
+  };
+</script>
+<p>知乎专栏链接：<input type="text" id="zhihuzhuanlan-url"/><input type="button" value="Go" onclick="zhihuzhuanlan_go();"/></p>
+
+<p>这里还有些好用的小书签。添加为书签之后在知乎专栏页面使用即可：
+  <a href="javascript:(function(){var%20u='https://rss.lilydjwg.me/zhihuzhuanlan/';var%20l=location;if(l.host!='zhuanlan.zhihu.com'){alert('%E8%AF%B7%E5%9C%A8%E7%9F%A5%E4%B9%8E%E4%B8%93%E6%A0%8F%E9%A1%B5%E9%9D%A2%E4%BD%BF%E7%94%A8%E3%80%82');return}u+=l.pathname.split('/')[1];l.href=u})()">订阅知乎专栏</a>
+  <a href="javascript:(function(){var%20u='https://www.inoreader.com/?add_feed=https://rss.lilydjwg.me/zhihuzhuanlan/';var%20l=location;if(l.host!='zhuanlan.zhihu.com'){alert('%E8%AF%B7%E5%9C%A8%E7%9F%A5%E4%B9%8E%E4%B8%93%E6%A0%8F%E9%A1%B5%E9%9D%A2%E4%BD%BF%E7%94%A8%E3%80%82');return}u+=l.pathname.split('/')[1];l.href=u})()">订阅知乎专栏到 InoReader</a>
+</p>
+
+<p>如果你发现访问的文章中的图片没有显示，那是因为知乎做了处理。如果你是火狐用户，可以使用如下方案：</p>
+<ol>
+  <li>使用 <a href="https://addons.mozilla.org/zh-CN/firefox/addon/refcontrol/">RefControl</a> 扩展来禁止火狐向知乎图片发送 referrer。</li>
+  <li>打开 about:config 页面，搜索 <code>network.http.sendSecureXSiteReferrer</code> 并双击使之成为 <code>false</code>。这样火狐不会向不同域名的 HTTPS 网站发送 referrer。</li>
+</ol>
+<hr/>
+<footer>
+<ul>
+  <li>源码地址：<a href="https://github.com/lilydjwg/morerssplz">https://github.com/lilydjwg/morerssplz</a>。欢迎来提交 pull request 哟～</li>
+  <li><a href="http://lilydjwg.is-programmer.com/">作者博客</a></li>
+</ul>
+</footer>
