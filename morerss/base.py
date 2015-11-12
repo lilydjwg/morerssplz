@@ -17,7 +17,8 @@ class BaseHandler(web.RequestHandler):
 '''
 
   def initialize(self):
-    self.set_header('Content-Type', 'application/rss+xml; charset="UTF-8"')
+    self.set_header('Content-Type', 'application/rss+xml; charset=utf-8')
+    self.set_header('Cache-Control', 'public, max-age=3600')
 
   def write_error(self, status_code, **kwargs):
     if self.settings.get("debug") and "exc_info" in kwargs:
