@@ -56,11 +56,16 @@ def process_content(text):
 
 def post2rss(baseurl, post, *, digest=False):
   url = urljoin(baseurl, post['url'])
+  if digest:
+    content = post['summary']
+  elif 'titleImage' in post:
+    content = '<p><img src="%s"></p>' % post['titleImage'] + post['content']
+  else:
+    content = post['content']
   item = PyRSS2Gen.RSSItem(
     title = post['title'].replace('\x08', ''),
     link = url,
-    description = process_content(
-      digest and post['summary'] or post['content']),
+    description = process_content(content),
     pubDate = parse_time(post['publishedTime']),
     categories = [x['name'] for x in post['topics']],
     author = post['author']['name'],
