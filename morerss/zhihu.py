@@ -2,6 +2,7 @@ from urllib.parse import urljoin
 import datetime
 import json
 import re
+import itertools
 
 import PyRSS2Gen
 from tornado import gen, web
@@ -12,6 +13,12 @@ from .base import BaseHandler
 httpclient = AsyncHTTPClient()
 
 re_br_to_remove = re.compile(r'(?:<br>)+')
+re_img = re.compile(r'<img src="([^h])')
+
+picN = iter(itertools.cycle('1234'))
+
+def abs_img(m):
+  return '<img src="https://pic%s.zhimg.com/' % next(picN) + m.group(1)
 
 class ZhihuZhuanlanHandler(BaseHandler):
   @gen.coroutine
@@ -44,6 +51,7 @@ def parse_time(t):
 
 def process_content(text):
   text = re_br_to_remove.sub(r'', text)
+  text = re_img.sub(abs_img, text)
   return text
 
 def post2rss(baseurl, post, *, digest=False):
