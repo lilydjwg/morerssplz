@@ -28,7 +28,7 @@ class ZhihuZhuanlanHandler(BaseHandler):
     baseurl = 'http://zhuanlan.zhihu.com/' + name
     url = 'http://zhuanlan.zhihu.com/api/columns/' + name
     info = yield self._get_url(url)
-    url = 'http://zhuanlan.zhihu.com/api/columns/%s/posts' % name
+    url = 'http://zhuanlan.zhihu.com/api/columns/%s/posts?limit=20' % name
     posts = yield self._get_url(url)
 
     rss = posts2rss(url, info, posts, digest=digest)
@@ -67,7 +67,6 @@ def post2rss(baseurl, post, *, digest=False):
     link = url,
     description = process_content(content),
     pubDate = parse_time(post['publishedTime']),
-    categories = [x['name'] for x in post['topics']],
     author = post['author']['name'],
   )
   return item
