@@ -52,13 +52,14 @@ def parse_time(t):
 def process_content(text):
   text = re_br_to_remove.sub(r'', text)
   text = re_img.sub(abs_img, text)
+  text = text.replace('<img ', '<img rel="noreferrer" ')
   return text
 
 def post2rss(baseurl, post, *, digest=False):
   url = urljoin(baseurl, post['url'])
   if digest:
     content = post['summary']
-  elif 'titleImage' in post:
+  elif post.get('titleImage'):
     content = '<p><img src="%s"></p>' % post['titleImage'] + post['content']
   else:
     content = post['content']
