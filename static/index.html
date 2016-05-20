@@ -17,7 +17,7 @@
   var zhihuzhuanlan_go = function(){
     var u = 'https://rss.lilydjwg.me/zhihuzhuanlan/';
     var l = document.getElementById('zhihuzhuanlan-url').value;
-    if(l.indexOf('http://zhuanlan.zhihu.com/') !== 0){
+    if(l.indexOf('//zhuanlan.zhihu.com/') > 6){
       alert('请填写知乎专栏链接。');
       return;
     }
