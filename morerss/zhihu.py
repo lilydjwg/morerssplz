@@ -72,6 +72,8 @@ def process_content(text):
   text = re_br_to_remove.sub(r'', text)
   text = re_img.sub(abs_img, text)
   text = text.replace('<img ', '<img rel="noreferrer" ')
+  text = text.replace('<code ', '<pre><code ')
+  text = text.replace('</code>', '</code></pre>')
   return text
 
 def post2rss(baseurl, post, *, digest=False, pic=None):
