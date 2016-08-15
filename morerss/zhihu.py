@@ -44,10 +44,10 @@ class ZhihuZhuanlanHandler(BaseHandler):
     pic = self.get_argument('pic', None)
     digest = self.get_argument('digest', False) == 'true'
 
-    baseurl = 'http://zhuanlan.zhihu.com/' + name
-    url = 'http://zhuanlan.zhihu.com/api/columns/' + name
+    baseurl = 'https://zhuanlan.zhihu.com/' + name
+    url = 'https://zhuanlan.zhihu.com/api/columns/' + name
     info = yield self._get_url(url)
-    url = 'http://zhuanlan.zhihu.com/api/columns/%s/posts?limit=20' % name
+    url = 'https://zhuanlan.zhihu.com/api/columns/%s/posts?limit=20' % name
     posts = yield self._get_url(url)
 
     rss = posts2rss(url, info, posts, digest=digest, pic=pic)
@@ -113,9 +113,11 @@ def test(url):
   column = url.rsplit('/', 1)[-1]
 
   s = requests.Session()
-  url = 'http://zhuanlan.zhihu.com/api/columns/' + column
+  s.headers['User-Agent'] = 'curl/7.50.1'
+  # s.verify = False
+  url = 'https://zhuanlan.zhihu.com/api/columns/' + column
   info = s.get(url).json()
-  url = 'http://zhuanlan.zhihu.com/api/columns/%s/posts' % column
+  url = 'https://zhuanlan.zhihu.com/api/columns/%s/posts' % column
   posts = s.get(url).json()
 
   rss = posts2rss(url, info, posts, pic='cf')
