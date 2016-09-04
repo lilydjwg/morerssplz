@@ -13,8 +13,8 @@ from .base import BaseHandler
 httpclient = AsyncHTTPClient()
 
 re_br_to_remove = re.compile(r'(?:<br>)+')
-re_img = re.compile(r'<img src="([^h])')
-re_zhihu_img = re.compile(r'(?<=<img rel="noreferrer" src=")https://\w+\.zhimg\.com/[^"]+(?=")')
+re_img = re.compile(r'<img [^>]*?src="([^h])')
+re_zhihu_img = re.compile(r'(?<= src=")https://\w+\.zhimg\.com/[^"]+(?=")')
 
 picN = iter(itertools.cycle('1234'))
 
