@@ -106,7 +106,7 @@ def posts2rss(baseurl, info, posts, *, digest=False, pic=None):
     lastBuildDate = datetime.datetime.now(),
     items = items,
     generator = 'morerssplz 0.1',
-    description = info['description'],
+    description = info.get('description', ''),
   )
   return rss
 
