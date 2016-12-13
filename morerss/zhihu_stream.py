@@ -20,6 +20,7 @@ httpclient = AsyncHTTPClient()
 logger = logging.getLogger(__name__)
 
 re_zhihu_img = re.compile(r'https://\w+\.zhimg\.com/.+')
+ACCEPT_VERBS = ['MEMBER_CREATE_ARTICLE', 'ANSWER_CREATE']
 
 class ZhihuAPI:
   baseurl = 'https://www.zhihu.com/api/v4/'
@@ -29,7 +30,7 @@ class ZhihuAPI:
     url = 'members/%s/activities' % name
     query = {
       'include': 'data[?(target.type=answer)].target.is_normal,content,created_time,updated_time;data[?(target.type=article)].target.column,content,created,updated',
-      'limit': '20',
+      'limit': '40',
     }
     url += '?' + urlencode(query)
     data = await self._get_json(url)
@@ -73,7 +74,7 @@ async def activities2rss(name, digest=False, pic=None):
   }
 
   data = await zhihu_api.activities(name)
-  posts = [x['target'] for x in data['data']]
+  posts = [x['target'] for x in data['data'] if x['verb'] in ACCEPT_VERBS]
   rss = base.data2rss(
     url,
     info, posts,
