@@ -1,4 +1,4 @@
-各种转 RSS 服务。目前只支持知乎专栏。
+各种转 RSS 服务。目前支持**知乎专栏**和**知乎动态**。
 
 网站的使用方法见 [https://rss.lilydjwg.me/](https://rss.lilydjwg.me/)。
 
