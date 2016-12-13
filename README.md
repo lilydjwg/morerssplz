@@ -4,7 +4,7 @@
 
 程序依赖：
 
-* Python 3
+* Python >= 3.5
 * Tornado
 * PyRSS2Gen
 * lxml
