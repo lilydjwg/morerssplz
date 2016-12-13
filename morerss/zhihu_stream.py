@@ -20,7 +20,6 @@ httpclient = AsyncHTTPClient()
 logger = logging.getLogger(__name__)
 
 re_zhihu_img = re.compile(r'https://\w+\.zhimg\.com/.+')
-re_br_to_remove = re.compile(r'(?:<br>)+')
 
 class ZhihuAPI:
   baseurl = 'https://www.zhihu.com/api/v4/'
@@ -84,6 +83,12 @@ async def activities2rss(name, digest=False, pic=None):
   return xml
 
 def tidy_content(doc):
+  for br in doc.xpath('//br/following-sibling::br'):
+    br.getparent().remove(br)
+
+  for br in doc.xpath('//p/following-sibling::br'):
+    br.getparent().remove(br)
+
   for noscript in doc.xpath('//noscript'):
     p = noscript.getparent()
     img = noscript.getnext()
@@ -95,6 +100,7 @@ def tidy_content(doc):
     attrib = img.attrib
     if 'data-original' in attrib:
       img.set('src', attrib['data-original'])
+      del attrib['data-original']
 
     if 'class' in attrib:
       del attrib['class']
@@ -131,7 +137,6 @@ def post2rss(post, digest=False, pic=None):
   else:
     content = post['content']
 
-  content = re_br_to_remove.sub(r'', content)
   content = content.replace('<code ', '<pre><code ')
   content = content.replace('</code>', '</code></pre>')
 
