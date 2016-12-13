@@ -1,7 +1,14 @@
 import traceback
 import http.client as httpclient
+from urllib.parse import quote
+import logging
+import datetime
 
 from tornado import web
+import PyRSS2Gen
+
+__version__ = '0.2'
+logger = logging.getLogger(__name__)
 
 class BaseHandler(web.RequestHandler):
   error_page = '''\
@@ -45,3 +52,42 @@ class BaseHandler(web.RequestHandler):
         "message": httpclient.responses[status_code],
         "err": err_msg,
       })
+
+def data2rss(url, info, data, transform_func):
+  items = [transform_func(x) for x in data]
+  items = [x for x in items if x]
+  rss = PyRSS2Gen.RSS2(
+    title = info['title'],
+    link = url,
+    lastBuildDate = datetime.datetime.now(),
+    items = items,
+    generator = 'morerssplz %s' % (__version__),
+    description = info['description'],
+  )
+  return rss
+
+def _proxify_url_cf(url):
+  if url.startswith('http://'):
+    url = url[7:]
+  elif url.startswith('https://'):
+    url = 'ssl:' + url[8:]
+  else:
+    logger.error('bad image url: %s', url)
+    url = url
+  return 'https://images.weserv.nl/?url=%s' % url
+
+def _proxify_url_google(url):
+  return 'https://images1-focus-opensocial.googleusercontent.com/gadgets/proxy?url=' + quote(url) + '&container=focus'
+
+PIC_PROXIES = {
+  'google': _proxify_url_google,
+  'cf': _proxify_url_cf,
+}
+
+def proxify_pic(doc, pattern, pic):
+  p = PIC_PROXIES[pic]
+  for img in doc.xpath('//img[@src]'):
+    src = img.get('src')
+    if pattern.match(src):
+      img.set('src', p(src))
+

@@ -7,5 +7,6 @@
 * Python 3
 * Tornado
 * PyRSS2Gen
+* lxml
 
 程序源码许可证： GPLv3

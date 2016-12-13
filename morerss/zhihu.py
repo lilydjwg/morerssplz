@@ -3,12 +3,15 @@ import datetime
 import json
 import re
 import itertools
+from functools import partial
 
 import PyRSS2Gen
 from tornado import gen, web
 from tornado.httpclient import AsyncHTTPClient
+from lxml.html import fromstring, tostring
 
 from .base import BaseHandler
+from . import base
 
 httpclient = AsyncHTTPClient()
 
@@ -17,23 +20,6 @@ re_img = re.compile(r'<img [^>]*?src="([^h])')
 re_zhihu_img = re.compile(r'(?<= src=")https://\w+\.zhimg\.com/[^"]+(?=")')
 
 picN = iter(itertools.cycle('1234'))
-
-def proxify_url_cf(match):
-  url = match.group()
-  return 'https://images.weserv.nl/?url=ssl:' + url[8:]
-
-def proxify_url_google(match):
-  url = match.group()
-  return 'https://images1-focus-opensocial.googleusercontent.com/gadgets/proxy?url=' + quote(url) + '&container=focus'
-
-PIC_PROXIES = {
-  'google': proxify_url_google,
-  'cf': proxify_url_cf,
-}
-
-def proxify_pic(html, pic):
-  html = re_zhihu_img.sub(PIC_PROXIES[pic], html)
-  return html
 
 def abs_img(m):
   return '<img src="https://pic%s.zhimg.com/' % next(picN) + m.group(1)
@@ -50,7 +36,16 @@ class ZhihuZhuanlanHandler(BaseHandler):
     url = 'https://zhuanlan.zhihu.com/api/columns/%s/posts?limit=20' % name
     posts = yield self._get_url(url)
 
-    rss = posts2rss(url, info, posts, digest=digest, pic=pic)
+    rss_info = {
+      'title': '%s - 知乎专栏' % info['name'],
+      'description': info.get('description', ''),
+    }
+
+    rss = base.data2rss(
+      baseurl,
+      rss_info, posts,
+      partial(post2rss, url, digest=digest, pic=pic),
+    )
     xml = rss.to_xml(encoding='utf-8')
     self.finish(xml)
 
@@ -86,8 +81,11 @@ def post2rss(baseurl, post, *, digest=False, pic=None):
     content = post['content']
 
   content = process_content(content)
-  if pic is not None:
-    content = proxify_pic(content, pic)
+
+  doc = fromstring(content)
+  if pic:
+    base.proxify_pic(doc, re_zhihu_img, pic)
+  content = tostring(doc, encoding=str)
 
   item = PyRSS2Gen.RSSItem(
     title = post['title'].replace('\x08', ''),
@@ -98,21 +96,10 @@ def post2rss(baseurl, post, *, digest=False, pic=None):
   )
   return item
 
-def posts2rss(baseurl, info, posts, *, digest=False, pic=None):
-  items = [post2rss(baseurl, p, digest=digest, pic=pic) for p in posts]
-  rss = PyRSS2Gen.RSS2(
-    title = '%s - 知乎专栏' % info['name'],
-    link = baseurl,
-    lastBuildDate = datetime.datetime.now(),
-    items = items,
-    generator = 'morerssplz 0.1',
-    description = info.get('description', ''),
-  )
-  return rss
-
 def test(url):
   import requests
   column = url.rsplit('/', 1)[-1]
+  baseurl = url
 
   s = requests.Session()
   s.headers['User-Agent'] = 'curl/7.50.1'
@@ -122,7 +109,15 @@ def test(url):
   url = 'https://zhuanlan.zhihu.com/api/columns/%s/posts' % column
   posts = s.get(url).json()
 
-  rss = posts2rss(url, info, posts, pic='cf')
+  rss_info = {
+    'title': '%s - 知乎专栏' % info['name'],
+    'description': info.get('description', ''),
+  }
+  rss = base.data2rss(
+    baseurl,
+    rss_info, posts,
+    partial(post2rss, url, pic='cf'),
+  )
   return rss
 
 if __name__ == '__main__':
