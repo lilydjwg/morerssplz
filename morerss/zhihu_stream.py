@@ -121,7 +121,7 @@ def post2rss(post, digest=False, pic=None):
     url = 'https://zhuanlan.zhihu.com/p/%s' % post['id']
     t_c = post['created']
 
-  elif post['type'] in ['roundtable', 'live']:
+  elif post['type'] in ['roundtable', 'live', 'column']:
     return
   else:
     logger.warn('unknown type: %s', post['type'])
