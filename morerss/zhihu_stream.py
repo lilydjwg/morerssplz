@@ -89,8 +89,7 @@ def tidy_content(doc):
     img = noscript.getnext()
     if img.tag == 'img':
       p.remove(img)
-    p.remove(noscript)
-    p.extend(noscript)
+    p.replace(noscript, noscript[0])
 
   for img in doc.xpath('//img[@src]'):
     attrib = img.attrib
