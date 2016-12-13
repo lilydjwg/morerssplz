@@ -84,9 +84,6 @@ async def activities2rss(name, digest=False, pic=None):
   return xml
 
 def tidy_content(doc):
-  for br in doc.xpath('//br/following-sibling::br'):
-    br.getparent().remove(br)
-
   for br in doc.xpath('//p/following-sibling::br'):
     br.getparent().remove(br)
 
@@ -114,6 +111,18 @@ def tidy_content(doc):
     href = a.get('href')
     href = parse_qs(urlsplit(href).query)['target'][0]
     a.set('href', href)
+
+  for a in doc.xpath('//a[starts-with(@href, "https://link.zhihu.com/?target=")]'):
+    href = a.get('href')
+    href = parse_qs(urlsplit(href).query)['target'][0]
+    a.set('href', href)
+
+  for a in doc.xpath('//a'):
+    for k in ['rel', 'class']:
+      try:
+        del a.attrib[k]
+      except KeyError:
+        pass
 
 def post2rss(post, digest=False, pic=None):
   if post['type'] == 'answer':
