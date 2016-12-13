@@ -6,3 +6,4 @@ except ImportError:
   pycurl = None
 
 from .zhihu import ZhihuZhuanlanHandler
+from .zhihu_stream import ZhihuStream

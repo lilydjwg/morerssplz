@@ -17,6 +17,7 @@ from morerss import *
 routers = [
   # (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': static_dir}),
   (r'/zhihuzhuanlan/([^/]+)', ZhihuZhuanlanHandler),
+  (r'/zhihu/([^/]+)', ZhihuStream),
 ]
 
 def main():

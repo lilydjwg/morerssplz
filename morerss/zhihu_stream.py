@@ -9,7 +9,8 @@ import re
 from functools import partial
 
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
-from tornado import gen
+import tornado.httpclient
+from tornado import gen, web
 import PyRSS2Gen
 from lxml.html import fromstring, tostring
 
@@ -18,7 +19,8 @@ from . import base
 httpclient = AsyncHTTPClient()
 logger = logging.getLogger(__name__)
 
-re_zhihu_img = re.compile(r'(?<= src=")https://\w+\.zhimg\.com/[^"]+(?=")')
+re_zhihu_img = re.compile(r'https://\w+\.zhimg\.com/.+')
+re_br_to_remove = re.compile(r'(?:<br>)+')
 
 class ZhihuAPI:
   baseurl = 'https://www.zhihu.com/api/v4/'
@@ -82,7 +84,15 @@ async def activities2rss(name, digest=False, pic=None):
   return xml
 
 def tidy_content(doc):
-  for img in doc.xpath('//img[src]'):
+  for noscript in doc.xpath('//noscript'):
+    p = noscript.getparent()
+    img = noscript.getnext()
+    if img.tag == 'img':
+      p.remove(img)
+    p.remove(noscript)
+    p.extend(noscript)
+
+  for img in doc.xpath('//img[@src]'):
     attrib = img.attrib
     if 'data-original' in attrib:
       img.set('src', attrib['data-original'])
@@ -121,6 +131,11 @@ def post2rss(post, digest=False, pic=None):
     content = post['excerpt']
   else:
     content = post['content']
+
+  content = re_br_to_remove.sub(r'', content)
+  content = content.replace('<code ', '<pre><code ')
+  content = content.replace('</code>', '</code></pre>')
+
   doc = fromstring(content)
   tidy_content(doc)
   if pic:
@@ -144,8 +159,13 @@ class ZhihuStream(base.BaseHandler):
     pic = self.get_argument('pic', None)
     digest = self.get_argument('digest', False) == 'true'
 
-    # TODO: 404 处理
-    rss = yield activities2rss(name)
+    try:
+      rss = yield activities2rss(name, digest=digest, pic=pic)
+    except tornado.httpclient.HTTPError as e:
+      if e.code == 404:
+        raise web.HTTPError(404)
+      else:
+        raise
     self.finish(rss)
 
 async def test():

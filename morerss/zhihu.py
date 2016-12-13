@@ -17,7 +17,7 @@ httpclient = AsyncHTTPClient()
 
 re_br_to_remove = re.compile(r'(?:<br>)+')
 re_img = re.compile(r'<img [^>]*?src="([^h])')
-re_zhihu_img = re.compile(r'(?<= src=")https://\w+\.zhimg\.com/[^"]+(?=")')
+re_zhihu_img = re.compile(r'https://\w+\.zhimg\.com/.+')
 
 picN = iter(itertools.cycle('1234'))
 
@@ -74,18 +74,19 @@ def process_content(text):
 def post2rss(baseurl, post, *, digest=False, pic=None):
   url = urljoin(baseurl, post['url'])
   if digest:
-    content = post['summary']
+    content = post['summary'].strip()
   elif post.get('titleImage'):
     content = '<p><img src="%s"></p>' % post['titleImage'] + post['content']
   else:
     content = post['content']
 
-  content = process_content(content)
+  if content:
+    content = process_content(content)
 
-  doc = fromstring(content)
-  if pic:
-    base.proxify_pic(doc, re_zhihu_img, pic)
-  content = tostring(doc, encoding=str)
+    doc = fromstring(content)
+    if pic:
+      base.proxify_pic(doc, re_zhihu_img, pic)
+    content = tostring(doc, encoding=str)
 
   item = PyRSS2Gen.RSSItem(
     title = post['title'].replace('\x08', ''),
