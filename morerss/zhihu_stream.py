@@ -55,8 +55,14 @@ class ZhihuAPI:
     res = await httpclient.fetch(url, headers = {'User-Agent': self.user_agent})
     doc = fromstring(res.body.decode('utf-8'))
     name = doc.xpath('//span[@class="name"]')[0].text_content()
-    headline = doc.xpath('//div[@class="tagline"]')[0].text_content()
     url = doc.xpath('//a[@class="avatar-link"]')[0].get('href')
+
+    tagline = doc.xpath('//div[@class="tagline"]')
+    if tagline:
+      headline = tagline[0].text_content()
+    else:
+      headline = ''
+
     return {
       'name': name,
       'headline': headline,
