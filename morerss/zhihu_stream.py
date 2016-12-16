@@ -102,6 +102,7 @@ def tidy_content(doc):
 
   for img in doc.xpath('//img[@src]'):
     attrib = img.attrib
+    attrib['referrerpolicy'] = 'no-referrer'
     if 'data-original' in attrib:
       img.set('src', attrib['data-original'])
       del attrib['data-original']
