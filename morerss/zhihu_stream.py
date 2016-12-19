@@ -183,8 +183,8 @@ class ZhihuStream(base.BaseHandler):
     try:
       rss = yield activities2rss(name, digest=digest, pic=pic)
     except tornado.httpclient.HTTPError as e:
-      if res.code in [404, 429]:
-        raise web.HTTPError(res.code)
+      if e.code in [404, 429]:
+        raise web.HTTPError(e.code)
       else:
         raise
     self.finish(rss)
