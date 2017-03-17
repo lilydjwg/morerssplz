@@ -53,6 +53,9 @@ class ZhihuAPI:
         'url_token': name,
       })))
     res = await httpclient.fetch(url, headers = {'User-Agent': self.user_agent})
+    if not res.body:
+      # e.g. https://www.zhihu.com/bei-feng-san-dai
+      raise web.HTTPError(404)
     doc = fromstring(res.body.decode('utf-8'))
     name = doc.xpath('//span[@class="name"]')[0].text_content()
     url = doc.xpath('//a[@class="avatar-link"]')[0].get('href')
