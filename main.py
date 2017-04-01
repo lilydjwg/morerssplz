@@ -18,6 +18,7 @@ routers = [
   # (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': static_dir}),
   (r'/zhihuzhuanlan/([^/]+)', ZhihuZhuanlanHandler),
   (r'/zhihu/([^/]+)', ZhihuStream),
+  (r'/v2ex/(\d+)', V2exCommentHandler),
 ]
 
 def main():
