@@ -1,10 +1,11 @@
 import traceback
-import http.client as httpclient
+import http.client
 from urllib.parse import quote
 import logging
 import datetime
 
-from tornado import web
+from tornado import web, httpclient
+from tornado.log import gen_log
 import PyRSS2Gen
 
 __version__ = '0.2'
@@ -49,9 +50,15 @@ class BaseHandler(web.RequestHandler):
 
       self.finish(self.error_page % {
         "code": status_code,
-        "message": httpclient.responses[status_code],
+        "message": http.client.responses[status_code],
         "err": err_msg,
       })
+
+  def log_exception(self, typ, value, tb):
+    if isinstance(value, httpclient.HTTPError) and value.code >= 500:
+      gen_log.warning('client error: %r', value)
+    else:
+      super().log_exception(typ, value, tb)
 
 def data2rss(url, info, data, transform_func):
   items = [transform_func(x) for x in data]
