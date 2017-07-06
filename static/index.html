@@ -7,10 +7,11 @@
     margin: 2em auto;
   }
 </style>
-<p>本站提供各种转 RSS 服务。已经支持的有：</p>
+<p><b>本站提供各种转 RSS 服务。已经支持的有：</b></p>
 
 <h2>知乎专栏</h2>
-<p>将知乎专栏首页地址里的用户名写到 https://rss.lilydjwg.me/zhihuzhuanlan/ 之后即可。如专栏首页是 <a href="https://zhuanlan.zhihu.com/dingxiangyisheng">https://zhuanlan.zhihu.com/dingxiangyisheng</a>，则订阅地址为 <a href="/zhihuzhuanlan/dingxiangyisheng">https://rss.lilydjwg.me/zhihuzhuanlan/dingxiangyisheng</a>。</p>
+<p>将知乎专栏首页地址里的用户名写到 <code>https://rss.lilydjwg.me/zhihuzhuanlan/</code> 之后即可。<br>
+如专栏首页是 <a href="https://zhuanlan.zhihu.com/dingxiangyisheng">https://zhuanlan.zhihu.com/dingxiangyisheng</a>，则订阅地址为 <a href="/zhihuzhuanlan/dingxiangyisheng">https://rss.lilydjwg.me/zhihuzhuanlan/dingxiangyisheng</a> .</p>
 
 <p>也可以用下边这个表单：</p>
 <script>
@@ -27,27 +28,34 @@
 </script>
 <p>知乎专栏链接：<input type="text" id="zhihuzhuanlan-url"/><input type="button" value="Go" onclick="zhihuzhuanlan_go();"/></p>
 
-<p>这里还有些好用的小书签。添加为书签之后在知乎专栏页面使用即可：
-  <a href="javascript:(function(){var%20u='https://rss.lilydjwg.me/zhihuzhuanlan/';var%20l=location;if(l.host!='zhuanlan.zhihu.com'){alert('%E8%AF%B7%E5%9C%A8%E7%9F%A5%E4%B9%8E%E4%B8%93%E6%A0%8F%E9%A1%B5%E9%9D%A2%E4%BD%BF%E7%94%A8%E3%80%82');return}u+=l.pathname.split('/')[1];l.href=u})()">订阅知乎专栏</a>
-  <a href="javascript:(function(){var%20u='https://www.inoreader.com/?add_feed=https://rss.lilydjwg.me/zhihuzhuanlan/';var%20l=location;if(l.host!='zhuanlan.zhihu.com'){alert('%E8%AF%B7%E5%9C%A8%E7%9F%A5%E4%B9%8E%E4%B8%93%E6%A0%8F%E9%A1%B5%E9%9D%A2%E4%BD%BF%E7%94%A8%E3%80%82');return}u+=l.pathname.split('/')[1];l.href=u})()">订阅知乎专栏到 InoReader</a>
+<p>这里还有些好用的小书签，拖拽到浏览器书签之后在知乎专栏页面使用即可：<br>
+  <a href="javascript:(function(){var%20u='https://rss.lilydjwg.me/zhihuzhuanlan/';var%20l=location;if(l.host!='zhuanlan.zhihu.com'){alert('%E8%AF%B7%E5%9C%A8%E7%9F%A5%E4%B9%8E%E4%B8%93%E6%A0%8F%E9%A1%B5%E9%9D%A2%E4%BD%BF%E7%94%A8%E3%80%82');return}u+=l.pathname.split('/')[1];l.href=u})()">订阅知乎专栏</a><br>
+  <a href="javascript:(function(){var%20u='https://www.inoreader.com/?add_feed=https://rss.lilydjwg.me/zhihuzhuanlan/';var%20l=location;if(l.host!='zhuanlan.zhihu.com'){alert('%E8%AF%B7%E5%9C%A8%E7%9F%A5%E4%B9%8E%E4%B8%93%E6%A0%8F%E9%A1%B5%E9%9D%A2%E4%BD%BF%E7%94%A8%E3%80%82');return}u+=l.pathname.split('/')[1];l.href=u})()">订阅知乎专栏到 Inoreader</a>
 </p>
 
-<p>如果你发现访问的文章中的图片没有显示，那是因为知乎做了处理。如果你是火狐用户，可以使用如下方案：</p>
+<p><b>如果你发现访问的文章中图片没有显示</b>，那是因为知乎做了处理。解决方案如下：</p>
 <ol>
-  <li>使用 <a href="https://addons.mozilla.org/firefox/addon/refcontrol/">RefControl</a> 扩展来禁止火狐向知乎图片发送 referrer。</li>
-  <li>如果你能访问 Google 或者 CloudFlare，可以使用它们提供的图片代理。在 URL 后边加上 <code>?pic=google</code> 或者 <code>?pic=cf</code> 就可以了。</li>
+  <li>使用浏览器扩展来禁止 RSS 阅读器向知乎图床发送 referer：<br>
+  Firefox 用户推荐使用 <a href="https://addons.mozilla.org/firefox/addon/refcontrol/">RefControl</a>，
+  Chrome 用户推荐使用 <a href="https://chrome.google.com/webstore/detail/referer-control/hnkcfpcejkafcihlgbojoidoihckciin">Referer Control</a> .<br>
+  如使用 Inoreader，在扩展设置里屏蔽 <code>inoreader.com</code> 向第三方站点发送 referer 即可。
+  <li>如果你能访问 Google 或者 CloudFlare，可以使用它们提供的图片代理。在订阅地址后边加上
+  <code>?pic=google</code> 或者 <code>?pic=cf</code> 就可以了，例如：<a href="/zhihuzhuanlan/dingxiangyisheng?pic=cf">https://rss.lilydjwg.me/zhihuzhuanlan/dingxiangyisheng?pic=cf</a><br>
+  <a href="/zhihuzhuanlan/dingxiangyisheng?pic=google">https://rss.lilydjwg.me/zhihuzhuanlan/dingxiangyisheng?pic=google</a>
+  </li>
 </ol>
-<p>想要评论？来<a href="https://blog.lilydjwg.me/2015/11/11/subscribe-to-zhihu-zhuanlan-via-rss.188250.html">我博客</a>。</p>
+
+<p>想要评论？来我<a href="https://blog.lilydjwg.me/2015/11/11/subscribe-to-zhihu-zhuanlan-via-rss.188250.html">博客</a>。</p>
 
 <h2>知乎动态</h2>
 <p>就是知乎新版个人页面的动态啦。不过只支持<strong>回答</strong>和<strong>文章</strong>两种类型。把个人页面链接里那个 ID 写到 https://rss.lilydjwg.me/zhihu/ 后边就可以了（不要带 people/ 或者 org/ 之类的）。比如这个页面 <a href="https://www.zhihu.com/org/jian-dan-xin-li">https://www.zhihu.com/org/jian-dan-xin-li</a>，订阅地址就是 <a href="/zhihu/jian-dan-xin-li">https://rss.lilydjwg.me/zhihu/jian-dan-xin-li</a>。</p>
 <p>「知乎专栏」支持的参数，这里也支持。比如处理图片显示问题的 <code>pic</code> 参数。</p>
 
 <h2>v2ex 评论</h2>
-<p>将 v2ex 帖子 URL 里的数字写到 https://rss.lilydjwg.me/v2ex/ 之后即可。</p>
-<p>小书签：
-  <a href="javascript:(function(){var%20u='https://rss.lilydjwg.me/v2ex/';var%20l=location;if(l.href.indexOf('https://www.v2ex.com/t/')!=0){alert('%E8%AF%B7%E5%9C%A8%20v2ex%20%E5%B8%96%E5%AD%90%E9%A1%B5%E9%9D%A2%E4%BD%BF%E7%94%A8');return}u+=l.pathname.split('/')[2];l.href=u})()">订阅 v2ex 帖子评论</a>
-  <a href="javascript:(function(){var%20u='https://www.inoreader.com/?add_feed=https://rss.lilydjwg.me/v2ex/';var%20l=location;if(l.href.indexOf('https://www.v2ex.com/t/')!=0){alert('%E8%AF%B7%E5%9C%A8%20v2ex%20%E5%B8%96%E5%AD%90%E9%A1%B5%E9%9D%A2%E4%BD%BF%E7%94%A8');return}u+=l.pathname.split('/')[2];l.href=u})()">订阅 v2ex 帖子评论到 InoReader</a>
+<p>将 v2ex 帖子 URL 里的数字写到 <code>https://rss.lilydjwg.me/v2ex/</code> 之后即可。</p>
+<p>小书签：<br>
+  <a href="javascript:(function(){var%20u='https://rss.lilydjwg.me/v2ex/';var%20l=location;if(l.href.indexOf('https://www.v2ex.com/t/')!=0){alert('%E8%AF%B7%E5%9C%A8%20v2ex%20%E5%B8%96%E5%AD%90%E9%A1%B5%E9%9D%A2%E4%BD%BF%E7%94%A8');return}u+=l.pathname.split('/')[2];l.href=u})()">订阅 v2ex 帖子评论</a> <br>
+  <a href="javascript:(function(){var%20u='https://www.inoreader.com/?add_feed=https://rss.lilydjwg.me/v2ex/';var%20l=location;if(l.href.indexOf('https://www.v2ex.com/t/')!=0){alert('%E8%AF%B7%E5%9C%A8%20v2ex%20%E5%B8%96%E5%AD%90%E9%A1%B5%E9%9D%A2%E4%BD%BF%E7%94%A8');return}u+=l.pathname.split('/')[2];l.href=u})()">订阅 v2ex 帖子评论到 Inoreader</a>
 </p>
 
 <hr/>
