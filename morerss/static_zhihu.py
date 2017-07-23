@@ -1,12 +1,12 @@
 import json
 import re
 
-from tornado import gen
 from tornado.httpclient import AsyncHTTPClient
 from lxml.html import fromstring, tostring
 
+from . import base
 from .base import BaseHandler
-from .zhihu_stream import tidy_content
+from .zhihu_stream import tidy_content, re_zhihu_img
 
 httpclient = AsyncHTTPClient()
 
@@ -26,10 +26,9 @@ body {{ max-width: 700px; margin: auto; }}
 '''
 
 class StaticZhihuHandler(BaseHandler):
-  @gen.coroutine
-  def get(self, id):
+  async def get(self, id):
     pic = self.get_argument('pic', None)
-    page = yield self._get_url(f'https://zhuanlan.zhihu.com/p/{id}')
+    page = await self._get_url(f'https://zhuanlan.zhihu.com/p/{id}')
     for l in page.splitlines():
       if l.lstrip().startswith('<textarea id="preloadedState" hidden>'):
         content = l.split('>', 1)[-1].rsplit('<', 1)[0]
@@ -44,13 +43,16 @@ class StaticZhihuHandler(BaseHandler):
 
     doc = fromstring(body)
     body = tidy_content(doc)
+
+    if pic:
+      base.proxify_pic(doc, re_zhihu_img, pic)
+
     body = tostring(doc, encoding=str)
     self.set_header('Content-Type', 'text/html; charset=utf-8')
     self.finish(page_template.format_map(vars()))
 
-  @gen.coroutine
-  def _get_url(self, url):
-    res = yield httpclient.fetch(url, raise_error=False)
+  async def _get_url(self, url):
+    res = await httpclient.fetch(url, raise_error=False)
     if res.code in [404, 429]:
       raise web.HTTPError(res.code)
     else:
