@@ -52,7 +52,7 @@ class ZhihuZhuanlanHandler(BaseHandler):
   @gen.coroutine
   def _get_url(self, url):
     res = yield httpclient.fetch(url, raise_error=False)
-    if res.code in [404, 429, 410]:
+    if res.code in [404, 429]:
       raise web.HTTPError(res.code)
     else:
       res.rethrow()
