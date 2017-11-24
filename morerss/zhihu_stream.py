@@ -3,7 +3,6 @@
 from urllib.parse import urlencode, urljoin, urlsplit, parse_qs, quote
 import json
 import datetime
-import time
 import logging
 import re
 from functools import partial
@@ -188,9 +187,10 @@ class ZhihuStream(base.BaseHandler):
     except tornado.httpclient.HTTPError as e:
       if e.code in [404, 429]:
         raise web.HTTPError(e.code)
-      # 410 in case only logged-in users can see, e.g. paperexpress-55
+      # 410 in case only logged-in users can see
       # let's return 403 instead
-      elif e.code == 410:
+      # 401: suspended account, e.g. hou-xiao-yu-8
+      elif e.code in [410, 401]:
         raise web.HTTPError(403)
       else:
         raise
