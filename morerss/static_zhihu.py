@@ -29,11 +29,11 @@ class StaticZhihuHandler(BaseHandler):
   async def get(self, id):
     pic = self.get_argument('pic', None)
     page = await self._get_url(f'https://zhuanlan.zhihu.com/p/{id}')
-    for l in page.splitlines():
-      if l.lstrip().startswith('<textarea id="preloadedState" hidden>'):
-        content = l.split('>', 1)[-1].rsplit('<', 1)[0]
-        content = json.loads(content)
-        break
+    doc = fromstring(page)
+    content = doc.xpath('//textarea[@id="preloadedState" and @hidden]')[0].text_content()
+    # fix new Date("....") values
+    content = re.sub(r'new Date\("([^"]+)"\)', r'"\1"', content)
+    content = json.loads(content)
 
     post = content['database']['Post'][id]
     title = post['title']
