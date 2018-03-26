@@ -6,6 +6,7 @@ import datetime
 import logging
 import re
 from functools import partial
+import time
 
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 import tornado.httpclient
@@ -23,12 +24,13 @@ ACCEPT_VERBS = ['MEMBER_CREATE_ARTICLE', 'ANSWER_CREATE']
 
 class ZhihuAPI:
   baseurl = 'https://www.zhihu.com/api/v4/'
-  user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/50.0'
+  user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:61.0) Gecko/20100101 Firefox/61.0'
 
   async def activities(self, name):
     url = 'members/%s/activities' % name
     query = {
-      'include': 'data[?(target.type=answer)].target.is_normal,content,created_time,updated_time;data[?(target.type=article)].target.column,content,created,updated',
+      'desktop': 'True',
+      'after_id': str(int(time.time()) - 86400 * 3),
       'limit': '40',
     }
     url += '?' + urlencode(query)
@@ -197,7 +199,8 @@ class ZhihuStream(base.BaseHandler):
     self.finish(rss)
 
 async def test():
-  rss = await activities2rss('cai-qian-hua-56')
+  # rss = await activities2rss('cai-qian-hua-56')
+  rss = await activities2rss('fu-lan-ke-yang')
   print(rss)
 
 if __name__ == '__main__':
