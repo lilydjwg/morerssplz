@@ -30,7 +30,7 @@ class ZhihuAPI:
     url = 'members/%s/activities' % name
     query = {
       'desktop': 'True',
-      'after_id': str(int(time.time()) - 86400 * 3),
+      'after_id': str(int(time.time()) - 86400 * 7),
       'limit': '40',
     }
     url += '?' + urlencode(query)
