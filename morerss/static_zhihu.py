@@ -3,6 +3,7 @@ import re
 
 from tornado.httpclient import AsyncHTTPClient
 from lxml.html import fromstring, tostring
+from tornado import web
 
 from . import base
 from .base import BaseHandler
@@ -30,16 +31,15 @@ class StaticZhihuHandler(BaseHandler):
     pic = self.get_argument('pic', None)
     page = await self._get_url(f'https://zhuanlan.zhihu.com/p/{id}')
     doc = fromstring(page)
-    content = doc.xpath('//textarea[@id="preloadedState" and @hidden]')[0].text_content()
-    # fix new Date("....") values
+    state_div = doc.xpath('//div[@id="data"]')[0]
+    content = state_div.get('data-state')
     content = re.sub(r'new Date\("([^"]+)"\)', r'"\1"', content)
     content = json.loads(content)
 
-    post = content['database']['Post'][id]
-    title = post['title']
-    author = post['author']
-    body = post['content']
-    author = content['database']['User'][author]['name']
+    article = content['entities']['articles'][id]
+    title = article['title']
+    author = article['author']['name']
+    body = article['content']
 
     doc = fromstring(body)
     body = tidy_content(doc)
