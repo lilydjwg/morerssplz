@@ -15,16 +15,20 @@ class V2exCommentHandler(BaseHandler):
   def get(self, tid):
     url = 'https://www.v2ex.com/t/' + tid
     webpage = yield self._get_url(url)
-    data = parse_webpage(webpage, baseurl=url)
 
-    if len(data['comments']) < 40 and data['prev']:
-      webpage = yield self._get_url(data['prev'])
-      data2 = parse_webpage(webpage, baseurl=data['prev'])
-      comments = data['comments'] + data2['comments']
-      if len(comments) > 40:
-        comments = comments[:40]
-    else:
-      comments = data['comments']
+    try:
+      data = parse_webpage(webpage, baseurl=url)
+
+      if len(data['comments']) < 40 and data['prev']:
+        webpage = yield self._get_url(data['prev'])
+        data2 = parse_webpage(webpage, baseurl=data['prev'])
+        comments = data['comments'] + data2['comments']
+        if len(comments) > 40:
+          comments = comments[:40]
+      else:
+        comments = data['comments']
+    except PermissionError:
+      raise web.HTTPError(403, 'login required')
 
     rss_info = {
       'title': '[评论] %s' % data['subject'],
@@ -74,6 +78,9 @@ def parse_webpage(body, baseurl):
   doc = fromstring(body, base_url=baseurl)
   doc.make_links_absolute()
   subject = doc.xpath('//title')[0].text_content()
+  if subject == 'V2EX › 登录':
+    raise PermissionError
+
   description = doc.xpath('//meta[@property="og:description"]')[0] \
       .get('content')
   comments = doc.xpath('//div[@id="Main"]/div[@class="box"]/div[@id]')
