@@ -98,6 +98,7 @@ def proxify_pic(doc, pattern, pic):
     if pattern.match(src):
       img.set('src', p(src))
 
+httpclient.AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
 _httpclient = httpclient.AsyncHTTPClient()
 
 async def fetch_zhihu(url, **kwargs):
