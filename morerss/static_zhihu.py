@@ -33,8 +33,9 @@ class StaticZhihuHandler(BaseHandler):
     content = json.loads(content)
 
     article = content['entities']['articles'][id]
-    # title = article['title']
-    # author = article['author']['name']
+    # used by vars()
+    title = article['title']
+    author = article['author']['name']
     body = article['content']
 
     doc = fromstring(body)
