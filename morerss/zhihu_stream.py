@@ -23,7 +23,7 @@ ACCEPT_VERBS = ['MEMBER_CREATE_ARTICLE', 'ANSWER_CREATE']
 
 class ZhihuAPI:
   baseurl = 'https://www.zhihu.com/api/v4/'
-  user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:61.0) Gecko/20100101 Firefox/61.0'
+  user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:62.0) Gecko/20100101 Firefox/62.0'
 
   async def activities(self, name):
     url = 'members/%s/activities' % name
