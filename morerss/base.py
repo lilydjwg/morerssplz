@@ -104,17 +104,32 @@ httpclient.AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClien
 _httpclient = httpclient.AsyncHTTPClient()
 
 from . import proxy
+from tornado.options import options
 
 class ZhihuManager:
   def __init__(self):
+    # don't show GET xxx
+    from tornado.curl_httpclient import curl_log
+    curl_log.setLevel(logging.INFO)
     self.proxies = []
 
   async def _do_fetch(self, url, kwargs):
+    if options.zhihu_proxy:
+      return await self._do_fetch_with_proxy(url, kwargs)
+    else:
+      return await self._do_fetch_direct(url, kwargs)
+
+  async def _do_fetch_direct(self, url, kwargs):
+    req = HTTPRequest(url, **kwargs)
+    res = await _httpclient.fetch(req, raise_error=False)
+    return res
+
+  async def _do_fetch_with_proxy(self, url, kwargs):
     if not self.proxies:
       self.proxies.extend(await proxy.get_proxies())
 
     p = random.choice(self.proxies)
-    logger.debug('Using proxy %s', p)
+    logger.debug('Using proxy %s, %d in memory', p, len(self.proxies))
     host, port = p.rsplit(':', 1)
 
     req = HTTPRequest(
