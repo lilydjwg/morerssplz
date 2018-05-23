@@ -3,9 +3,11 @@ import http.client
 from urllib.parse import quote
 import logging
 import datetime
+import random
 
 from tornado import web, httpclient
 from tornado.log import gen_log
+from tornado.httpclient import HTTPRequest
 import PyRSS2Gen
 
 __version__ = '0.2'
@@ -101,28 +103,51 @@ def proxify_pic(doc, pattern, pic):
 httpclient.AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
 _httpclient = httpclient.AsyncHTTPClient()
 
-async def fetch_zhihu(url, **kwargs):
-  if isinstance(url, str):
-    res = await _httpclient.fetch(
-      url, raise_error=False, follow_redirects=False,
+from . import proxy
+
+class ZhihuManager:
+  def __init__(self):
+    self.proxies = []
+
+  async def _do_fetch(self, url, kwargs):
+    if not self.proxies:
+      self.proxies.extend(await proxy.get_proxies())
+
+    p = random.choice(self.proxies)
+    logger.debug('Using proxy %s', p)
+    host, port = p.rsplit(':', 1)
+
+    req = HTTPRequest(
+      url, proxy_host = host, proxy_port = int(port),
+      request_timeout = 10,
       **kwargs,
     )
-  else:
-    res = await _httpclient.fetch(
-      url, raise_error=False,
-    )
 
-  if res.code in [404, 429]:
-    raise web.HTTPError(res.code)
-  # 410 in case only logged-in users can see
-  # let's return 403 instead
-  # 401: suspended account, e.g. hou-xiao-yu-8
-  elif res.code in [410, 401]:
-    raise web.HTTPError(403)
-  elif res.code == 302:
-    if 'unhuman' in res.headers.get('Location'):
-      raise web.HTTPError(503, 'Rate-limited')
-  else:
-    res.rethrow()
+    res = await _httpclient.fetch(req, raise_error=False)
+    if res.code == 599:
+      self.proxies.remove(p)
+    return res
 
-  return res
+  async def fetch_zhihu(self, url, **kwargs):
+    kwargs.setdefault('follow_redirects', False)
+    kwargs.setdefault('raise_error', False)
+    kwargs.pop('raise_error', None)
+
+    res = await self._do_fetch(url, kwargs)
+
+    if res.code in [404, 429]:
+      raise web.HTTPError(res.code)
+    # 410 in case only logged-in users can see
+    # let's return 403 instead
+    # 401: suspended account, e.g. hou-xiao-yu-8
+    elif res.code in [410, 401]:
+      raise web.HTTPError(403)
+    elif res.code == 302:
+      if 'unhuman' in res.headers.get('Location'):
+        raise web.HTTPError(503, 'Rate-limited')
+    else:
+      res.rethrow()
+
+    return res
+
+fetch_zhihu = ZhihuManager().fetch_zhihu

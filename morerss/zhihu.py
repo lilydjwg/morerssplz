@@ -6,7 +6,6 @@ import itertools
 from functools import partial
 
 import PyRSS2Gen
-from tornado import gen
 from lxml.html import fromstring, tostring
 
 from .base import BaseHandler
@@ -22,16 +21,15 @@ def abs_img(m):
   return '<img src="https://pic%s.zhimg.com/' % next(picN) + m.group(1)
 
 class ZhihuZhuanlanHandler(BaseHandler):
-  @gen.coroutine
-  def get(self, name):
+  async def get(self, name):
     pic = self.get_argument('pic', None)
     digest = self.get_argument('digest', False) == 'true'
 
     baseurl = 'https://zhuanlan.zhihu.com/' + name
     url = 'https://zhuanlan.zhihu.com/api/columns/' + name
-    info = yield self._get_url(url)
+    info = await self._get_url(url)
     url = 'https://zhuanlan.zhihu.com/api/columns/%s/posts?limit=20' % name
-    posts = yield self._get_url(url)
+    posts = await self._get_url(url)
 
     rss_info = {
       'title': '%s - 知乎专栏' % info['name'],

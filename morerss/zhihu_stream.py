@@ -8,7 +8,6 @@ import re
 from functools import partial
 import time
 
-from tornado.httpclient import HTTPRequest
 import tornado.httpclient
 from tornado import gen, web
 import PyRSS2Gen
@@ -37,15 +36,12 @@ class ZhihuAPI:
     return data
 
   async def _get_json(self, url):
-    req = HTTPRequest(
-      urljoin(self.baseurl, url),
-      follow_redirects = False,
-      headers = {
-        'User-Agent': self.user_agent,
-        'Authorization': 'oauth c3cef7c66a1843f8b3a9e6a1e3160e20', # hard-coded in js
-      },
-    )
-    res = await base.fetch_zhihu(req)
+    url = urljoin(self.baseurl, url)
+    headers = {
+      'User-Agent': self.user_agent,
+      'Authorization': 'oauth c3cef7c66a1843f8b3a9e6a1e3160e20', # hard-coded in js
+    }
+    res = await base.fetch_zhihu(url, headers = headers)
     return json.loads(res.body.decode('utf-8'))
 
   async def card(self, name):
