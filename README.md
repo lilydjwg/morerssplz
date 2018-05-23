@@ -5,8 +5,11 @@
 程序依赖：
 
 * Python >= 3.5
-* Tornado
+* Tornado >= 5 (旧版本可能也可以用）
 * PyRSS2Gen
 * lxml
+* pycurl
+
+代理支持模块 `morerss.proxy` 是故意不提交的。如果需要，请自行实现。
 
 程序源码许可证： GPLv3

@@ -103,7 +103,11 @@ def proxify_pic(doc, pattern, pic):
 httpclient.AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
 _httpclient = httpclient.AsyncHTTPClient()
 
-from . import proxy
+try:
+  from . import proxy
+except ImportError:
+  proxy = None
+
 from tornado.options import options
 
 class ZhihuManager:
@@ -114,7 +118,7 @@ class ZhihuManager:
     self.proxies = []
 
   async def _do_fetch(self, url, kwargs):
-    if options.zhihu_proxy:
+    if proxy and options.zhihu_proxy:
       return await self._do_fetch_with_proxy(url, kwargs)
     else:
       return await self._do_fetch_direct(url, kwargs)
