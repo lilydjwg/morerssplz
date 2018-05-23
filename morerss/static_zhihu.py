@@ -1,15 +1,11 @@
 import json
 import re
 
-from tornado.httpclient import AsyncHTTPClient
 from lxml.html import fromstring, tostring
-from tornado import web
 
 from . import base
-from .base import BaseHandler
+from .base import BaseHandler, fetch_zhihu
 from .zhihu_stream import tidy_content, re_zhihu_img
-
-httpclient = AsyncHTTPClient()
 
 page_template = '''\
 <!DOCTYPE html>
@@ -37,8 +33,8 @@ class StaticZhihuHandler(BaseHandler):
     content = json.loads(content)
 
     article = content['entities']['articles'][id]
-    title = article['title']
-    author = article['author']['name']
+    # title = article['title']
+    # author = article['author']['name']
     body = article['content']
 
     doc = fromstring(body)
@@ -52,9 +48,5 @@ class StaticZhihuHandler(BaseHandler):
     self.finish(page_template.format_map(vars()))
 
   async def _get_url(self, url):
-    res = await httpclient.fetch(url, raise_error=False)
-    if res.code in [404, 429]:
-      raise web.HTTPError(res.code)
-    else:
-      res.rethrow()
+    res = await fetch_zhihu(url)
     return res.body.decode('utf-8')
