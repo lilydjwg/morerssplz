@@ -1,4 +1,4 @@
-from urllib.parse import urljoin, quote
+from urllib.parse import urljoin
 import datetime
 import json
 import re
@@ -6,14 +6,11 @@ import itertools
 from functools import partial
 
 import PyRSS2Gen
-from tornado import gen, web
-from tornado.httpclient import AsyncHTTPClient
+from tornado import gen
 from lxml.html import fromstring, tostring
 
 from .base import BaseHandler
 from . import base
-
-httpclient = AsyncHTTPClient()
 
 re_br_to_remove = re.compile(r'(?:<br>)+')
 re_img = re.compile(r'<img [^>]*?src="([^h])')
@@ -49,13 +46,8 @@ class ZhihuZhuanlanHandler(BaseHandler):
     xml = rss.to_xml(encoding='utf-8')
     self.finish(xml)
 
-  @gen.coroutine
-  def _get_url(self, url):
-    res = yield httpclient.fetch(url, raise_error=False)
-    if res.code in [404, 429]:
-      raise web.HTTPError(res.code)
-    else:
-      res.rethrow()
+  async def _get_url(self, url):
+    res = await base.fetch_zhihu(url)
     info = json.loads(res.body.decode('utf-8'))
     return info
 

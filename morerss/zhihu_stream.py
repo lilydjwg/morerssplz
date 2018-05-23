@@ -8,7 +8,7 @@ import re
 from functools import partial
 import time
 
-from tornado.httpclient import AsyncHTTPClient, HTTPRequest
+from tornado.httpclient import HTTPRequest
 import tornado.httpclient
 from tornado import gen, web
 import PyRSS2Gen
@@ -16,7 +16,6 @@ from lxml.html import fromstring, tostring
 
 from . import base
 
-httpclient = AsyncHTTPClient()
 logger = logging.getLogger(__name__)
 
 re_zhihu_img = re.compile(r'https://\w+\.zhimg\.com/.+')
@@ -40,12 +39,13 @@ class ZhihuAPI:
   async def _get_json(self, url):
     req = HTTPRequest(
       urljoin(self.baseurl, url),
+      follow_redirects = False,
       headers = {
         'User-Agent': self.user_agent,
         'Authorization': 'oauth c3cef7c66a1843f8b3a9e6a1e3160e20', # hard-coded in js
       },
     )
-    res = await httpclient.fetch(req)
+    res = await base.fetch_zhihu(req)
     return json.loads(res.body.decode('utf-8'))
 
   async def card(self, name):
@@ -53,7 +53,8 @@ class ZhihuAPI:
       json.dumps({
         'url_token': name,
       })))
-    res = await httpclient.fetch(url, headers = {'User-Agent': self.user_agent})
+    res = await base.fetch_zhihu(
+      url, headers = {'User-Agent': self.user_agent})
     if not res.body:
       # e.g. https://www.zhihu.com/bei-feng-san-dai
       raise web.HTTPError(404)
@@ -184,18 +185,7 @@ class ZhihuStream(base.BaseHandler):
     pic = self.get_argument('pic', None)
     digest = self.get_argument('digest', False) == 'true'
 
-    try:
-      rss = yield activities2rss(name, digest=digest, pic=pic)
-    except tornado.httpclient.HTTPError as e:
-      if e.code in [404, 429]:
-        raise web.HTTPError(e.code)
-      # 410 in case only logged-in users can see
-      # let's return 403 instead
-      # 401: suspended account, e.g. hou-xiao-yu-8
-      elif e.code in [410, 401]:
-        raise web.HTTPError(403)
-      else:
-        raise
+    rss = yield activities2rss(name, digest=digest, pic=pic)
     self.finish(rss)
 
 async def test():

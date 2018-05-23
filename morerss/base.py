@@ -98,3 +98,30 @@ def proxify_pic(doc, pattern, pic):
     if pattern.match(src):
       img.set('src', p(src))
 
+_httpclient = httpclient.AsyncHTTPClient()
+
+async def fetch_zhihu(url, **kwargs):
+  if isinstance(url, str):
+    res = await _httpclient.fetch(
+      url, raise_error=False, follow_redirects=False,
+      **kwargs,
+    )
+  else:
+    res = await _httpclient.fetch(
+      url, raise_error=False,
+    )
+
+  if res.code in [404, 429]:
+    raise web.HTTPError(res.code)
+  # 410 in case only logged-in users can see
+  # let's return 403 instead
+  # 401: suspended account, e.g. hou-xiao-yu-8
+  elif res.code in [410, 401]:
+    raise web.HTTPError(403)
+  elif res.code == 302:
+    if 'unhuman' in res.headers.get('Location'):
+      raise web.HTTPError(503, 'Rate-limited')
+  else:
+    res.rethrow()
+
+  return res
