@@ -143,10 +143,13 @@ class ZhihuManager:
     )
 
     res = await _httpclient.fetch(req, raise_error=False)
-    if res.code == 599:
-      self.proxies.remove(p)
-    elif res.code == 302 and 'unhuman' in res.headers.get('Location'):
-      self.proxies.remove(p)
+    try:
+      if res.code == 599:
+        self.proxies.remove(p)
+      elif res.code == 302 and 'unhuman' in res.headers.get('Location'):
+        self.proxies.remove(p)
+    except ValueError:
+      pass # already removed by another request
     return res
 
   async def fetch_zhihu(self, url, **kwargs):
