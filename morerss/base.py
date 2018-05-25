@@ -129,12 +129,13 @@ class ZhihuManager:
     return res
 
   async def _do_fetch_with_proxy(self, url, kwargs):
-    if not self.proxies:
-      self.proxies.extend(await proxy.get_proxies())
+    if len(self.proxies) < 10:
+      self.proxies.extend([x, 16] for x in (await proxy.get_proxies()))
 
     p = random.choice(self.proxies)
     logger.debug('Using proxy %s, %d in memory', p, len(self.proxies))
-    host, port = p.rsplit(':', 1)
+    score = p[1]
+    host, port = p[0].rsplit(':', 1)
 
     req = HTTPRequest(
       url, proxy_host = host, proxy_port = int(port),
@@ -144,10 +145,18 @@ class ZhihuManager:
 
     res = await _httpclient.fetch(req, raise_error=False)
     try:
-      if res.code == 599:
-        self.proxies.remove(p)
+      if res.code in [599, 403]:
+        score >>= 1
       elif res.code == 302 and 'unhuman' in res.headers.get('Location'):
+        logger.debug('proxy %s is unhuman-ed by zhihu', p)
+        score = 0
+      else:
+        score += 1
+
+      if score == 0:
         self.proxies.remove(p)
+      else:
+        p[1] = score
     except ValueError:
       pass # already removed by another request
     return res
@@ -155,6 +164,7 @@ class ZhihuManager:
   async def fetch_zhihu(self, url, **kwargs):
     kwargs.setdefault('follow_redirects', False)
     kwargs.setdefault('raise_error', False)
+    kwargs.setdefault('user_agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36')
     kwargs.pop('raise_error', None)
 
     res = await self._do_fetch(url, kwargs)
