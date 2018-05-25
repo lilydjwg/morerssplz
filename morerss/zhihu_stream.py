@@ -22,7 +22,6 @@ ACCEPT_VERBS = ['MEMBER_CREATE_ARTICLE', 'ANSWER_CREATE']
 
 class ZhihuAPI:
   baseurl = 'https://www.zhihu.com/api/v4/'
-  user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
 
   async def activities(self, name):
     url = 'members/%s/activities' % name
@@ -38,7 +37,6 @@ class ZhihuAPI:
   async def get_json(self, url):
     url = urljoin(self.baseurl, url)
     headers = {
-      'User-Agent': self.user_agent,
       'Authorization': 'oauth c3cef7c66a1843f8b3a9e6a1e3160e20', # hard-coded in js
     }
     res = await base.fetch_zhihu(url, headers = headers)
@@ -49,8 +47,7 @@ class ZhihuAPI:
       json.dumps({
         'url_token': name,
       })))
-    res = await base.fetch_zhihu(
-      url, headers = {'User-Agent': self.user_agent})
+    res = await base.fetch_zhihu(url)
     if not res.body:
       # e.g. https://www.zhihu.com/bei-feng-san-dai
       raise web.HTTPError(404)
