@@ -22,20 +22,20 @@ ACCEPT_VERBS = ['MEMBER_CREATE_ARTICLE', 'ANSWER_CREATE']
 
 class ZhihuAPI:
   baseurl = 'https://www.zhihu.com/api/v4/'
-  user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:62.0) Gecko/20100101 Firefox/62.0'
+  user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
 
   async def activities(self, name):
     url = 'members/%s/activities' % name
     query = {
       'desktop': 'True',
-      'after_id': str(int(time.time()) - 86400 * 7),
-      'limit': '40',
+      'after_id': str(int(time.time())),
+      'limit': '7',
     }
     url += '?' + urlencode(query)
-    data = await self._get_json(url)
+    data = await self.get_json(url)
     return data
 
-  async def _get_json(self, url):
+  async def get_json(self, url):
     url = urljoin(self.baseurl, url)
     headers = {
       'User-Agent': self.user_agent,
@@ -80,8 +80,22 @@ async def activities2rss(name, digest=False, pic=None):
     'description': info['headline'],
   }
 
+  posts = []
+  page = 1
+
   data = await zhihu_api.activities(name)
   posts = [x['target'] for x in data['data'] if x['verb'] in ACCEPT_VERBS]
+
+  while len(posts) < 20 and page < 5:
+    paging = data['paging']
+    if paging['is_end']:
+      break
+    data = await zhihu_api.get_json(paging['next'])
+    posts.extend(
+      x['target'] for x in data['data'] if x['verb'] in ACCEPT_VERBS
+    )
+    page += 1
+
   rss = base.data2rss(
     url,
     info, posts,
