@@ -27,10 +27,8 @@ class StaticZhihuHandler(BaseHandler):
     pic = self.get_argument('pic', None)
     page = await self._get_url(f'https://zhuanlan.zhihu.com/p/{id}')
     doc = fromstring(page)
-    state_div = doc.xpath('//div[@id="data"]')[0]
-    content = state_div.get('data-state')
-    content = re.sub(r'new Date\("([^"]+)"\)', r'"\1"', content)
-    content = json.loads(content)
+    static = doc.xpath('//script[@id="js-initialData"]')[0]
+    content = json.loads(static.text)['initialState']
 
     article = content['entities']['articles'][id]
     # used by vars()
