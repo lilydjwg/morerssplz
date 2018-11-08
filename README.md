@@ -9,7 +9,6 @@
 * PyRSS2Gen
 * lxml
 * pycurl
-* faker
 
 代理支持模块 `morerss.proxy` 是故意不提交的。如果需要，请自行实现。
 

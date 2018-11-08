@@ -109,7 +109,6 @@ except ImportError:
   proxy = None
 
 from tornado.options import options
-import faker
 
 class ZhihuManager:
   def __init__(self):
@@ -117,7 +116,6 @@ class ZhihuManager:
     from tornado.curl_httpclient import curl_log
     curl_log.setLevel(logging.INFO)
     self.proxies = []
-    self.faker = faker.Faker()
 
   async def _do_fetch(self, url, kwargs):
     if proxy and options.zhihu_proxy:
@@ -166,7 +164,7 @@ class ZhihuManager:
   async def fetch_zhihu(self, url, **kwargs):
     kwargs.setdefault('follow_redirects', False)
     kwargs.setdefault('raise_error', False)
-    kwargs.setdefault('user_agent', self.faker.user_agent())
+    kwargs.setdefault('user_agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36')
     kwargs.pop('raise_error', None)
 
     res = await self._do_fetch(url, kwargs)
