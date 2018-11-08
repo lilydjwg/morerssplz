@@ -1,5 +1,5 @@
 import json
-import re
+import logging
 
 from lxml.html import fromstring, tostring
 
@@ -22,12 +22,18 @@ body {{ max-width: 700px; margin: auto; }}
 <footer><a href="https://zhuanlan.zhihu.com/p/{id}">原文链接</a></footer>
 '''
 
+logger = logging.getLogger(__name__)
+
 class StaticZhihuHandler(BaseHandler):
   async def get(self, id):
     pic = self.get_argument('pic', None)
     page = await self._get_url(f'https://zhuanlan.zhihu.com/p/{id}')
     doc = fromstring(page)
-    static = doc.xpath('//script[@id="js-initialData"]')[0]
+    try:
+      static = doc.xpath('//script[@id="js-initialData"]')[0]
+    except IndexError:
+      logger.error('page source: %s', page)
+      raise
     content = json.loads(static.text)['initialState']
 
     article = content['entities']['articles'][id]
