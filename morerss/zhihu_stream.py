@@ -1,10 +1,7 @@
-#!/usr/bin/env python3
-
-from urllib.parse import urlencode, urljoin, urlsplit, parse_qs, quote
+from urllib.parse import urlencode, urljoin, quote
 import json
 import datetime
 import logging
-import re
 from functools import partial
 import time
 
@@ -14,11 +11,10 @@ import PyRSS2Gen
 from lxml.html import fromstring, tostring
 
 from . import base
-from .zhihulib import fetch_zhihu
+from .zhihulib import fetch_zhihu, re_zhihu_img, tidy_content
 
 logger = logging.getLogger(__name__)
 
-re_zhihu_img = re.compile(r'https://\w+\.zhimg\.com/.+')
 ACCEPT_VERBS = ['MEMBER_CREATE_ARTICLE', 'ANSWER_CREATE']
 
 class ZhihuAPI:
@@ -104,48 +100,6 @@ async def activities2rss(name, digest=False, pic=None):
   )
   xml = rss.to_xml(encoding='utf-8')
   return xml
-
-def tidy_content(doc):
-  for br in doc.xpath('//p/following-sibling::br'):
-    br.getparent().remove(br)
-
-  for noscript in doc.xpath('//noscript'):
-    p = noscript.getparent()
-    img = noscript.getnext()
-    if img.tag == 'img':
-      p.remove(img)
-    p.replace(noscript, noscript[0])
-
-  for img in doc.xpath('//img[@src]'):
-    attrib = img.attrib
-    attrib['referrerpolicy'] = 'no-referrer'
-    if 'data-original' in attrib:
-      img.set('src', attrib['data-original'])
-      del attrib['data-original']
-
-    if 'class' in attrib:
-      del attrib['class']
-    if 'data-rawwidth' in attrib:
-      del attrib['data-rawwidth']
-    if 'data-rawheight' in attrib:
-      del attrib['data-rawheight']
-
-  for a in doc.xpath('//a[starts-with(@href, "https://link.zhihu.com/?target=")]'):
-    href = a.get('href')
-    href = parse_qs(urlsplit(href).query)['target'][0]
-    a.set('href', href)
-
-  for a in doc.xpath('//a[starts-with(@href, "https://link.zhihu.com/?target=")]'):
-    href = a.get('href')
-    href = parse_qs(urlsplit(href).query)['target'][0]
-    a.set('href', href)
-
-  for a in doc.xpath('//a'):
-    for k in ['rel', 'class']:
-      try:
-        del a.attrib[k]
-      except KeyError:
-        pass
 
 def post2rss(post, digest=False, pic=None):
   if post['type'] == 'answer':

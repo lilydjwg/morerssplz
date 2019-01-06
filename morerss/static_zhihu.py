@@ -1,12 +1,7 @@
-import json
 import logging
 
-from lxml.html import fromstring, tostring
-
-from . import base
 from .base import BaseHandler
-from .zhihulib import fetch_zhihu
-from .zhihu_stream import tidy_content, re_zhihu_img
+from .zhihulib import fetch_article
 
 page_template = '''\
 <!DOCTYPE html>
@@ -28,31 +23,12 @@ logger = logging.getLogger(__name__)
 class StaticZhihuHandler(BaseHandler):
   async def get(self, id):
     pic = self.get_argument('pic', None)
-    page = await self._get_url(f'https://zhuanlan.zhihu.com/p/{id}')
-    doc = fromstring(page)
-    try:
-      static = doc.xpath('//script[@id="js-initialData"]')[0]
-    except IndexError:
-      logger.error('page source: %s', page)
-      raise
-    content = json.loads(static.text)['initialState']
+    article = await fetch_article(id, pic)
 
-    article = content['entities']['articles'][id]
     # used by vars()
     title = article['title']
     author = article['author']['name']
     body = article['content']
 
-    doc = fromstring(body)
-    body = tidy_content(doc)
-
-    if pic:
-      base.proxify_pic(doc, re_zhihu_img, pic)
-
-    body = tostring(doc, encoding=str)
     self.set_header('Content-Type', 'text/html; charset=utf-8')
     self.finish(page_template.format_map(vars()))
-
-  async def _get_url(self, url):
-    res = await fetch_zhihu(url)
-    return res.body.decode('utf-8')
