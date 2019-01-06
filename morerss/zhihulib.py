@@ -4,6 +4,7 @@ import json
 from typing import Optional
 from urllib.parse import urlsplit, parse_qs
 import re
+import itertools
 
 from tornado.options import options
 from tornado.httpclient import HTTPRequest
@@ -96,7 +97,36 @@ class ZhihuManager:
 
 fetch_zhihu = ZhihuManager().fetch_zhihu
 
-async def fetch_article(id: str, pic: Optional[str]):
+def process_content_for_html(body, pic):
+  doc = fromstring(body)
+  tidy_content(doc)
+  if pic:
+    base.proxify_pic(doc, re_zhihu_img, pic)
+  return tostring(doc, encoding=str)
+
+re_br_to_remove = re.compile(r'(?:<br>)+')
+re_img = re.compile(r'<img [^>]*?src="([^h])')
+re_zhihu_img = re.compile(r'https://\w+\.zhimg\.com/.+')
+
+_picN = iter(itertools.cycle('1234'))
+
+def _abs_img(m):
+  return '<img src="https://pic%s.zhimg.com/' % next(_picN) + m.group(1)
+
+def process_content_for_rss(body, pic):
+  body = re_br_to_remove.sub(r'', body)
+  body = re_img.sub(_abs_img, body)
+  body = body.replace('<img ', '<img referrerpolicy="no-referrer" ')
+  body = body.replace('<code ', '<pre><code ')
+  body = body.replace('</code>', '</code></pre>')
+
+  doc = fromstring(body)
+  if pic:
+    base.proxify_pic(doc, re_zhihu_img, pic)
+  return tostring(doc, encoding=str)
+
+async def fetch_article(id: str, pic: Optional[str],
+                        processor=process_content_for_html):
   url = f'https://zhuanlan.zhihu.com/p/{id}'
   res = await fetch_zhihu(url)
   page = res.body.decode('utf-8')
@@ -110,15 +140,7 @@ async def fetch_article(id: str, pic: Optional[str]):
   content = json.loads(static.text)['initialState']
 
   article = content['entities']['articles'][id]
-  body = article['content']
-
-  doc = fromstring(body)
-  tidy_content(doc)
-  if pic:
-    base.proxify_pic(doc, re_zhihu_img, pic)
-  body = tostring(doc, encoding=str)
-  article['content'] = body
-
+  article['content'] = processor(article['content'], pic=pic)
   return article
 
 def tidy_content(doc):
