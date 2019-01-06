@@ -14,6 +14,7 @@ import PyRSS2Gen
 from lxml.html import fromstring, tostring
 
 from . import base
+from .zhihulib import fetch_zhihu
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class ZhihuAPI:
       'User-Agent': self.user_agent,
       'Authorization': 'oauth c3cef7c66a1843f8b3a9e6a1e3160e20', # hard-coded in js
     }
-    res = await base.fetch_zhihu(url, headers = headers)
+    res = await fetch_zhihu(url, headers = headers)
     return json.loads(res.body.decode('utf-8'))
 
   async def card(self, name):
@@ -49,7 +50,7 @@ class ZhihuAPI:
       json.dumps({
         'url_token': name,
       })))
-    res = await base.fetch_zhihu(
+    res = await fetch_zhihu(
       url, headers = {'User-Agent': self.user_agent})
     if not res.body:
       # e.g. https://www.zhihu.com/bei-feng-san-dai

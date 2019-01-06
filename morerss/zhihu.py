@@ -9,6 +9,7 @@ from lxml.html import fromstring, tostring
 
 from .base import BaseHandler
 from . import base
+from .zhihulib import fetch_zhihu
 
 re_br_to_remove = re.compile(r'(?:<br>)+')
 re_img = re.compile(r'<img [^>]*?src="([^h])')
@@ -25,7 +26,7 @@ class ZhihuZhuanlanHandler(BaseHandler):
     digest = self.get_argument('digest', False) == 'true'
 
     baseurl = 'https://zhuanlan.zhihu.com/' + name
-    res = await base.fetch_zhihu(baseurl)
+    res = await fetch_zhihu(baseurl)
     url = 'https://zhuanlan.zhihu.com/api2/columns/{}/articles?limit=20&include=data%5B*%5D.admin_closed_comment%2Ccomment_count%2Csuggest_edit%2Cis_title_image_full_screen%2Ccan_comment%2Cupvoted_followees%2Ccan_open_tipjar%2Ccan_tip%2Cvoteup_count%2Cvoting%2Ctopics%2Creview_info%2Cauthor.is_following%2Cis_labeled%2Clabel_info'.format(name)
     posts = await self._get_url(url)
 
@@ -46,7 +47,7 @@ class ZhihuZhuanlanHandler(BaseHandler):
     self.finish(xml)
 
   async def _get_url(self, url):
-    res = await base.fetch_zhihu(url)
+    res = await fetch_zhihu(url)
     info = json.loads(res.body.decode('utf-8'))
     return info
 

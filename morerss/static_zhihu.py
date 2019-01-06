@@ -4,7 +4,8 @@ import logging
 from lxml.html import fromstring, tostring
 
 from . import base
-from .base import BaseHandler, fetch_zhihu
+from .base import BaseHandler
+from .zhihulib import fetch_zhihu
 from .zhihu_stream import tidy_content, re_zhihu_img
 
 page_template = '''\
