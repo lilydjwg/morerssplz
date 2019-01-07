@@ -6,6 +6,7 @@ import asyncio
 import os
 import logging
 import time
+import random
 
 import PyRSS2Gen
 from lxml.html import fromstring, tostring
@@ -42,7 +43,9 @@ async def _article_fetcher():
       _article_q.task_done()
     except Exception:
       logger.exception('error in _article_fetcher, sleeping 1s.')
-      time.sleep(1)
+      time.sleep(random.randint(1, 5))
+    else:
+      time.sleep(random.randint(50, 1000) / 1000)
 
 def article_from_cache(id, updated):
   fname = _cache_filepath(id, updated)
