@@ -8,7 +8,7 @@ from tornado import web, httpclient
 from tornado.log import gen_log
 import PyRSS2Gen
 
-__version__ = '0.2'
+__version__ = '0.3'
 logger = logging.getLogger(__name__)
 
 class BaseHandler(web.RequestHandler):
