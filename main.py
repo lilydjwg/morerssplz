@@ -2,7 +2,7 @@
 # vim:fileencoding=utf-8
 
 import os
-import sys
+import asyncio
 topdir = os.path.dirname(os.path.abspath(__file__))
 
 # tmpl_dir = os.path.join(topdir, 'tmpl')
@@ -26,8 +26,6 @@ def main():
   define("port", default=8000, help="run on the given port", type=int)
   define("address", default='', help="run on the given address", type=str)
   define("debug", default=False, help="debug mode", type=bool)
-  define("zhihu-proxy", default=False,
-         help="use proxies for zhihu", type=bool)
 
   tornado.options.parse_command_line()
   application = tornado.web.Application(
@@ -39,6 +37,9 @@ def main():
   )
   http_server = HTTPServer(application, xheaders=True)
   http_server.listen(options.port, address=options.address)
+
+  from morerss.zhihu import _article_fetcher
+  asyncio.ensure_future(_article_fetcher())
   tornado.ioloop.IOLoop.instance().start()
 
 if __name__ == "__main__":

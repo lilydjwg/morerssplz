@@ -6,7 +6,7 @@ from urllib.parse import urlsplit, parse_qs
 import re
 import itertools
 
-from tornado.options import options
+from tornado.options import options, define
 from tornado.httpclient import HTTPRequest
 from tornado import web, httpclient
 from lxml.html import fromstring, tostring
@@ -20,6 +20,9 @@ except ImportError:
 _httpclient = httpclient.AsyncHTTPClient()
 logger = logging.getLogger(__name__)
 re_zhihu_img = re.compile(r'https://\w+\.zhimg\.com/.+')
+
+define("zhihu-proxy", default=False,
+        help="use proxies for zhihu", type=bool)
 
 class ZhihuManager:
   def __init__(self):

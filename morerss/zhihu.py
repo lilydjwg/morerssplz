@@ -2,13 +2,51 @@ import datetime
 import json
 from functools import partial
 import re
+import asyncio
+import os
+import logging
+import time
 
 import PyRSS2Gen
-from lxml.html import fromstring
+from lxml.html import fromstring, tostring
+from tornado.options import options, define
 
 from .base import BaseHandler
 from . import base
 from . import zhihulib
+
+logger = logging.getLogger(__name__)
+define("cache-dir", default='/tmp/rss-cache',
+       help="cache directory for RSS data", type=str)
+
+_article_q = asyncio.Queue(maxsize=30)
+
+def _save_article(doc):
+  fname = '{}-{}.json'.format(doc['id'], doc['updated'])
+  with open(os.path.join(options.cache_dir, fname), 'w') as f:
+    json.dump(doc, f, ensure_ascii=False)
+
+async def _article_fetcher():
+  os.makedirs(options.cache_dir, exist_ok=True)
+  while True:
+    try:
+      id = await _article_q.get()
+      logger.info('fetching zhihu article %s', id)
+      article = await zhihulib.fetch_article(
+        id, pic=None, processor=zhihulib.process_content_for_rss)
+      _save_article(article)
+      _article_q.task_done()
+    except Exception:
+      logger.exception('error in _article_fetcher, sleeping 1s.')
+      time.sleep(1)
+
+def article_from_cache(id, updated):
+  fname = '{}-{}.json'.format(id, updated)
+  try:
+    with open(os.path.join(options.cache_dir, fname)) as f:
+      return json.load(f)
+  except FileNotFoundError:
+    return None
 
 class ZhihuZhuanlanHandler(BaseHandler):
   async def get(self, name):
@@ -53,8 +91,20 @@ def post2rss(baseurl, post, *, digest=False, pic=None):
     content = post['excerpt']
     content = zhihulib.process_content_for_rss(content, pic=pic)
   else:
-    content = post['excerpt'] + ' (全文尚不可用)'
-    content = zhihulib.process_content_for_rss(content, pic=pic)
+    article = article_from_cache(post['id'], post['updated'])
+    if not article:
+      content = post['excerpt'] + ' (全文尚不可用)'
+      content = zhihulib.process_content_for_rss(content, pic=pic)
+      try:
+        _article_q.put_nowait(str(post['id']))
+      except asyncio.QueueFull:
+        logger.warning('_article_q full')
+    else:
+      content = article['content']
+      if pic:
+        doc = fromstring(content)
+        base.proxify_pic(doc, zhihulib.re_zhihu_img, pic)
+        content = tostring(doc, encoding=str)
 
   if post.get('title_image'):
     content = '<p><img src="%s"></p>' % post['title_image'] + content
