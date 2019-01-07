@@ -48,6 +48,7 @@ def article_from_cache(id, updated):
   fname = _cache_filepath(id, updated)
   try:
     with open(os.path.join(options.cache_dir, fname)) as f:
+      logger.info('cache hit for %s', id)
       return json.load(f)
   except FileNotFoundError:
     return None
