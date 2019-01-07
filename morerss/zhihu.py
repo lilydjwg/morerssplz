@@ -32,8 +32,7 @@ async def _article_fetcher():
     try:
       id = await _article_q.get()
       logger.info('fetching zhihu article %s', id)
-      article = await zhihulib.fetch_article(
-        id, pic=None, processor=zhihulib.process_content_for_rss)
+      article = await zhihulib.fetch_article(id, pic=None)
       _save_article(article)
       _article_q.task_done()
     except Exception:
@@ -89,12 +88,12 @@ def post2rss(baseurl, post, *, digest=False, pic=None):
   url = post['url']
   if digest:
     content = post['excerpt']
-    content = zhihulib.process_content_for_rss(content, pic=pic)
+    content = zhihulib.process_content_for_html(content, pic=pic)
   else:
     article = article_from_cache(post['id'], post['updated'])
     if not article:
       content = post['excerpt'] + ' (全文尚不可用)'
-      content = zhihulib.process_content_for_rss(content, pic=pic)
+      content = zhihulib.process_content_for_html(content, pic=pic)
       try:
         _article_q.put_nowait(str(post['id']))
       except asyncio.QueueFull:
