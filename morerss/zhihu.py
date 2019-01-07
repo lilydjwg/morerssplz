@@ -21,13 +21,18 @@ define("cache-dir", default='/tmp/rss-cache',
 
 _article_q = asyncio.Queue(maxsize=30)
 
+def _cache_filepath(id, updated):
+  day, left = divmod(updated, 3600 * 24)
+  return '{1}/{2}-{0}.json'.format(id, day, left)
+
 def _save_article(doc):
-  fname = '{}-{}.json'.format(doc['id'], doc['updated'])
-  with open(os.path.join(options.cache_dir, fname), 'w') as f:
+  fname = _cache_filepath(doc['id'], doc['updated'])
+  path = os.path.join(options.cache_dir, fname)
+  os.makedirs(os.path.dirname(path), exist_ok=True)
+  with open(path, 'w') as f:
     json.dump(doc, f, ensure_ascii=False)
 
 async def _article_fetcher():
-  os.makedirs(options.cache_dir, exist_ok=True)
   while True:
     try:
       id = await _article_q.get()
@@ -40,7 +45,7 @@ async def _article_fetcher():
       time.sleep(1)
 
 def article_from_cache(id, updated):
-  fname = '{}-{}.json'.format(id, updated)
+  fname = _cache_filepath(id, updated)
   try:
     with open(os.path.join(options.cache_dir, fname)) as f:
       return json.load(f)
