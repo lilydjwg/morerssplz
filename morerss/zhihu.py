@@ -121,7 +121,7 @@ def post2rss(baseurl, post, *, digest=False, pic=None):
     title = post['title'].replace('\x08', ''),
     link = url,
     description = content,
-    pubDate = datetime.datetime.fromtimestamp(post['created']),
+    pubDate = datetime.datetime.fromtimestamp(post['updated']),
     author = post['author']['name'],
   )
   return item
