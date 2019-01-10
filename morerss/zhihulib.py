@@ -54,6 +54,7 @@ class ZhihuManager:
     req = HTTPRequest(
       url, proxy_host = host, proxy_port = int(port),
       request_timeout = 10,
+      validate_cert = False,
       **kwargs,
     )
 

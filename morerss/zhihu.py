@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 define("cache-dir", default='/tmp/rss-cache',
        help="cache directory for RSS data", type=str)
 
-_article_q = asyncio.Queue(maxsize=30)
+_article_q = asyncio.Queue(maxsize=50)
 
 def _cache_filepath(id, updated):
   day, left = divmod(updated, 3600 * 24)
@@ -44,8 +44,8 @@ async def _article_fetcher():
     except Exception:
       logger.exception('error in _article_fetcher, sleeping 1s.')
       time.sleep(random.randint(1, 5))
-    else:
-      time.sleep(random.randint(50, 1000) / 1000)
+    # else:
+    #   time.sleep(random.randint(50, 1000) / 1000)
 
 def article_from_cache(id, updated):
   fname = _cache_filepath(id, updated)
