@@ -23,11 +23,11 @@ define("cache-dir", default='/tmp/rss-cache',
 _article_q = asyncio.Queue(maxsize=50)
 
 def _cache_filepath(id, updated):
-  day, left = divmod(updated, 3600 * 24)
-  return '{1}/{2}-{0}.json'.format(id, day, left)
+  a, b = divmod(id, 3000)
+  return f'{a}/{b}', f'{a}/{b}/{updated}.json'
 
 def _save_article(doc):
-  fname = _cache_filepath(doc['id'], doc['updated'])
+  fname = _cache_filepath(doc['id'], doc['updated'])[1]
   path = os.path.join(options.cache_dir, fname)
   os.makedirs(os.path.dirname(path), exist_ok=True)
   with open(path, 'w') as f:
@@ -48,13 +48,24 @@ async def _article_fetcher():
     #   time.sleep(random.randint(50, 1000) / 1000)
 
 def article_from_cache(id, updated):
-  fname = _cache_filepath(id, updated)
+  dirname = _cache_filepath(id, updated)[0]
+  dirname = os.path.join(options.cache_dir, dirname)
   try:
-    with open(os.path.join(options.cache_dir, fname)) as f:
-      logger.info('cache hit for %s', id)
-      return json.load(f)
+    times = [int(x[:-len('.json')]) for x in os.listdir(dirname)]
   except FileNotFoundError:
     return None
+
+  if not times:
+    return None
+
+  times.sort()
+  t = times[-1]
+  if t < updated:
+    return None
+
+  with open(f'{dirname}/{t}.json') as f:
+    logger.info('cache hit for %s', id)
+    return json.load(f)
 
 class ZhihuZhuanlanHandler(BaseHandler):
   async def get(self, name):
