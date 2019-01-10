@@ -120,6 +120,7 @@ def post2rss(baseurl, post, *, digest=False, pic=None):
   item = PyRSS2Gen.RSSItem(
     title = post['title'].replace('\x08', ''),
     link = url,
+    guid = url,
     description = content,
     pubDate = datetime.datetime.fromtimestamp(post['updated']),
     author = post['author']['name'],

@@ -69,6 +69,7 @@ def comment2rss(url, comment):
   item = PyRSS2Gen.RSSItem(
     title = title,
     link = url,
+    guid = url,
     description = content,
     author = author,
   )

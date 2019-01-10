@@ -138,6 +138,7 @@ def post2rss(post, digest=False, pic=None):
   item = PyRSS2Gen.RSSItem(
     title = title.replace('\x08', ''),
     link = url,
+    guid = url,
     description = content.replace('\x08', ''),
     pubDate = pub_date,
     author = post['author']['name'],
