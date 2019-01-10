@@ -64,7 +64,7 @@ def article_from_cache(id, updated):
     return None
 
   with open(f'{dirname}/{t}.json') as f:
-    logger.info('cache hit for %s', id)
+    logger.debug('cache hit for %s', id)
     return json.load(f)
 
 class ZhihuZhuanlanHandler(BaseHandler):
