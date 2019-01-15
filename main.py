@@ -12,7 +12,13 @@ import tornado.web
 from tornado.options import define, options
 from tornado.httpserver import HTTPServer
 
-from morerss import *
+from morerss import (
+  ZhihuZhuanlanHandler,
+  ZhihuStream,
+  StaticZhihuHandler,
+  V2exCommentHandler,
+)
+from morerss.base import MyApp
 
 routers = [
   # (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': static_dir}),
@@ -28,7 +34,7 @@ def main():
   define("debug", default=False, help="debug mode", type=bool)
 
   tornado.options.parse_command_line()
-  application = tornado.web.Application(
+  application = MyApp(
     routers,
     gzip = True,
     debug = options.debug,

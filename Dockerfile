@@ -7,7 +7,7 @@ RUN set -ex \
             libc-dev    \
             libxslt-dev \
             libxml2-dev \
-    && pip3 install tornado lxml PyRSS2Gen 
+    && pip3 install tornado lxml PyRSS2Gen statsd
 
 EXPOSE 8000
 

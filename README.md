@@ -9,7 +9,16 @@
 * PyRSS2Gen
 * lxml
 * pycurl
+* statsd (the Python library)
 
 代理支持模块 `morerss.proxy` 是故意不提交的。如果需要，请自行实现。
 
 程序源码许可证： GPLv3
+
+## statsd 统计数据
+
+* timing: morerss.zhihu.fetch
+* timing: morerss.handler.Handler.Code
+* count: morerss.zhihu.queue_full
+* count: morerss.zhihu.cache_hit
+* count: morerss.zhihu.cache_miss

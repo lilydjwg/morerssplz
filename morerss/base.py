@@ -7,9 +7,11 @@ import datetime
 from tornado import web, httpclient
 from tornado.log import gen_log
 import PyRSS2Gen
+import statsd
 
-__version__ = '0.3'
+__version__ = '0.4'
 logger = logging.getLogger(__name__)
+STATSC = statsd.StatsClient('localhost', 8125, prefix='morerss')
 
 class BaseHandler(web.RequestHandler):
   error_page = '''\
@@ -99,3 +101,13 @@ def proxify_pic(doc, pattern, pic):
       img.set('src', p(src))
 
 httpclient.AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
+
+class MyApp(web.Application):
+  def log_request(self, handler):
+    super().log_request(handler)
+
+    code = handler.get_status()
+    request_time = 1000.0 * handler.request.request_time()
+    STATSC.timing('handler.%s.%s' % (
+      handler.__class__.__name__, code,
+    ), request_time)

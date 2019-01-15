@@ -38,7 +38,10 @@ async def _article_fetcher():
     try:
       id = await _article_q.get()
       logger.info('fetching zhihu article %s', id)
+      start_time = time.time()
       article = await zhihulib.fetch_article(id, pic=None)
+      used_time = time.time() - start_time
+      base.STATSC.timing('zhihu.fetch', used_time * 1000)
       _save_article(article)
       _article_q.task_done()
     except Exception:
@@ -64,7 +67,6 @@ def article_from_cache(id, updated):
     return None
 
   with open(f'{dirname}/{t}.json') as f:
-    logger.debug('cache hit for %s', id)
     return json.load(f)
 
 class ZhihuZhuanlanHandler(BaseHandler):
@@ -112,13 +114,18 @@ def post2rss(baseurl, post, *, digest=False, pic=None):
   else:
     article = article_from_cache(post['id'], post['updated'])
     if not article:
+      base.STATSC.incr('zhihu.cache_miss')
       content = post['excerpt'] + ' (全文尚不可用)'
       content = zhihulib.process_content_for_html(content, pic=pic)
       try:
         _article_q.put_nowait(str(post['id']))
       except asyncio.QueueFull:
         logger.warning('_article_q full')
+        base.STATSC.incr('zhihu.queue_full')
     else:
+      logger.debug('cache hit for %s', post['id'])
+      base.STATSC.incr('zhihu.cache_hit')
+
       content = article['content']
       if pic:
         doc = fromstring(content)
