@@ -44,8 +44,8 @@ async def _article_fetcher():
       base.STATSC.timing('zhihu.fetch', used_time * 1000)
       _save_article(article)
       _article_q.task_done()
-    except Exception:
-      logger.exception('error in _article_fetcher, sleeping 1s.')
+    except Exception as e:
+      logger.error('error in _article_fetcher, sleeping 1s: %s', e)
       time.sleep(random.randint(1, 5))
     # else:
     #   time.sleep(random.randint(50, 1000) / 1000)
