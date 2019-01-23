@@ -123,7 +123,7 @@ def post2rss(baseurl, post, *, digest=False, pic=None):
         logger.warning('_article_q full')
         base.STATSC.incr('zhihu.queue_full')
     else:
-      logger.debug('cache hit for %s', post['id'])
+      # logger.debug('cache hit for %s', post['id'])
       base.STATSC.incr('zhihu.cache_hit')
 
       content = article['content']
