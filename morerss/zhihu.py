@@ -7,6 +7,7 @@ import os
 import logging
 import time
 import random
+import gzip
 
 import PyRSS2Gen
 from lxml.html import fromstring, tostring
@@ -24,13 +25,13 @@ _article_q = asyncio.Queue(maxsize=50)
 
 def _cache_filepath(id, updated):
   a, b = divmod(id, 3000)
-  return f'{a}/{b}', f'{a}/{b}/{updated}.json'
+  return f'{a}/{b}', f'{a}/{b}/{updated}.json.gz'
 
 def _save_article(doc):
   fname = _cache_filepath(doc['id'], doc['updated'])[1]
   path = os.path.join(options.cache_dir, fname)
   os.makedirs(os.path.dirname(path), exist_ok=True)
-  with open(path, 'w') as f:
+  with gzip.open(path, 'wt') as f:
     json.dump(doc, f, ensure_ascii=False)
 
 async def _article_fetcher():
@@ -54,7 +55,8 @@ def article_from_cache(id, updated):
   dirname = _cache_filepath(id, updated)[0]
   dirname = os.path.join(options.cache_dir, dirname)
   try:
-    times = [int(x[:-len('.json')]) for x in os.listdir(dirname)]
+    times = [int(x.split('.', 1)[0]) for x in os.listdir(dirname)
+            if x.endswith(('.json', '.json.gz'))]
   except FileNotFoundError:
     return None
 
@@ -66,8 +68,12 @@ def article_from_cache(id, updated):
   if t < updated:
     return None
 
-  with open(f'{dirname}/{t}.json') as f:
-    return json.load(f)
+  try:
+    with gzip.open(f'{dirname}/{t}.json.gz', 'rt') as f:
+      return json.load(f)
+  except FileNotFoundError:
+    with open(f'{dirname}/{t}.json') as f:
+      return json.load(f)
 
 class ZhihuZhuanlanHandler(BaseHandler):
   async def get(self, name):
