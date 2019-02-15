@@ -88,7 +88,7 @@ class ZhihuZhuanlanHandler(BaseHandler):
       self.redirect(re.sub(f'/{re.escape(name)}\\b', f'/{new_name}', url))
       return
 
-    url = 'https://zhuanlan.zhihu.com/api2/columns/{}/articles?limit=20&include=data%5B*%5D.admin_closed_comment%2Ccomment_count%2Csuggest_edit%2Cis_title_image_full_screen%2Ccan_comment%2Cupvoted_followees%2Ccan_open_tipjar%2Ccan_tip%2Cvoteup_count%2Cvoting%2Ctopics%2Creview_info%2Cauthor.is_following%2Cis_labeled%2Clabel_info'.format(name)
+    url = 'https://zhuanlan.zhihu.com/api/columns/{}/articles?limit=20&include=data%5B*%5D.admin_closed_comment%2Ccomment_count%2Csuggest_edit%2Cis_title_image_full_screen%2Ccan_comment%2Cupvoted_followees%2Ccan_open_tipjar%2Ccan_tip%2Cvoteup_count%2Cvoting%2Ctopics%2Creview_info%2Cauthor.is_following%2Cis_labeled%2Clabel_info'.format(name)
     posts = await self._get_url(url)
 
     doc = fromstring(res.body.decode('utf-8'))
