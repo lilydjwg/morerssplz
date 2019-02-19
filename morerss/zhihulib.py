@@ -92,7 +92,7 @@ class ZhihuManager:
       raise web.HTTPError(403)
     elif res.code == 302:
       if 'unhuman' in res.headers.get('Location'):
-        raise web.HTTPError(429, 'Rate-limited')
+        raise web.HTTPError(503, 'Rate-limited')
     else:
       res.rethrow()
 
