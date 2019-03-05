@@ -147,7 +147,7 @@ def post2rss(post, digest=False, pic=None):
 
 class ZhihuStream(base.BaseHandler):
   async def get(self, name):
-    if name.endswith('%20'):
+    if name.endswith(' '):
       raise web.HTTPError(404)
     pic = self.get_argument('pic', None)
     digest = self.get_argument('digest', False) == 'true'
