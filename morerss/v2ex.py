@@ -1,7 +1,7 @@
 from functools import partial
 
 import PyRSS2Gen
-from tornado import gen, web
+from tornado import web
 from tornado.httpclient import AsyncHTTPClient
 from lxml.html import fromstring, tostring
 
@@ -11,16 +11,15 @@ from . import base
 httpclient = AsyncHTTPClient()
 
 class V2exCommentHandler(BaseHandler):
-  @gen.coroutine
-  def get(self, tid):
+  async def get(self, tid):
     url = 'https://www.v2ex.com/t/' + tid
-    webpage = yield self._get_url(url)
+    webpage = await self._get_url(url)
 
     try:
       data = parse_webpage(webpage, baseurl=url)
 
       if len(data['comments']) < 40 and data['prev']:
-        webpage = yield self._get_url(data['prev'])
+        webpage = await self._get_url(data['prev'])
         data2 = parse_webpage(webpage, baseurl=data['prev'])
         comments = data['comments'] + data2['comments']
         if len(comments) > 40:
@@ -44,9 +43,8 @@ class V2exCommentHandler(BaseHandler):
     xml = rss.to_xml(encoding='utf-8')
     self.finish(xml)
 
-  @gen.coroutine
-  def _get_url(self, url):
-    res = yield httpclient.fetch(url, raise_error=False)
+  async def _get_url(self, url):
+    res = await httpclient.fetch(url, raise_error=False)
     if res.code in [404, 429]:
       raise web.HTTPError(res.code)
     else:

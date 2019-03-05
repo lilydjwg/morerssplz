@@ -6,7 +6,7 @@ from functools import partial
 import time
 
 import tornado.httpclient
-from tornado import gen, web
+from tornado import web
 import PyRSS2Gen
 from lxml.html import fromstring, tostring
 
@@ -146,14 +146,13 @@ def post2rss(post, digest=False, pic=None):
   return item
 
 class ZhihuStream(base.BaseHandler):
-  @gen.coroutine
-  def get(self, name):
+  async def get(self, name):
     if name.endswith('%20'):
       raise web.HTTPError(404)
     pic = self.get_argument('pic', None)
     digest = self.get_argument('digest', False) == 'true'
 
-    rss = yield activities2rss(name, digest=digest, pic=pic)
+    rss = await activities2rss(name, digest=digest, pic=pic)
     self.finish(rss)
 
 async def test():
