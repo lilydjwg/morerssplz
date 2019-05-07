@@ -78,13 +78,14 @@ async def activities2rss(name, digest=False, pic=None):
   }
 
   posts = []
-  page = 1
+  page = 0
 
   data = await zhihu_api.activities(name)
   posts = [x['target'] for x in data['data'] if x['verb'] in ACCEPT_VERBS]
 
-  while len(posts) < 20 and page < 5:
+  while len(posts) < 20 and page < 3:
     paging = data['paging']
+    logger.debug('paging: %r', paging)
     if paging['is_end']:
       break
     data = await zhihu_api.get_json(paging['next'])
@@ -157,12 +158,12 @@ class ZhihuStream(base.BaseHandler):
 
 async def test():
   # rss = await activities2rss('cai-qian-hua-56')
-  rss = await activities2rss('fu-lan-ke-yang')
+  rss = await activities2rss('farseerfc')
   print(rss)
 
 if __name__ == '__main__':
   import tornado.ioloop
   from nicelogger import enable_pretty_logging
-  enable_pretty_logging('INFO')
+  enable_pretty_logging('DEBUG')
   loop = tornado.ioloop.IOLoop.current()
   loop.run_sync(test)
