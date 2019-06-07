@@ -22,3 +22,12 @@
 * count: morerss.zhihu.queue_full
 * count: morerss.zhihu.cache_hit
 * count: morerss.zhihu.cache_miss
+
+## 支持作者
+
+你可以使用支付宝、微信支付或者 <a href="https://paypal.me/lilydjwg">PayPal</a> 向我付款来支持此服务！
+
+<small>付款请备注 rss 字样以让我知道你喜欢的是本服务。</small>
+
+![支付宝二维码](https://img.vim-cn.com/90/8882060ccc8cb65b543f6956b7d40336cb7adc.png)
+![微信二维码](https://img.vim-cn.com/37/074ae3b290e5194b03d902a581ed006e493bcb.png)
