@@ -37,6 +37,8 @@ class ZhihuAPI:
     headers = {
       'User-Agent': self.user_agent,
       'Authorization': 'oauth c3cef7c66a1843f8b3a9e6a1e3160e20', # hard-coded in js
+      'x-api-version': '3.0.40',
+      'x-udid': 'AMAiMrPqqQ2PTnOxAr5M71LCh-dIQ8kkYvw=',
     }
     res = await fetch_zhihu(url, headers = headers)
     return json.loads(res.body.decode('utf-8'))
