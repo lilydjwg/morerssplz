@@ -136,7 +136,7 @@ def post2rss(post, digest=False, pic=None):
     base.proxify_pic(doc, re_zhihu_img, pic)
   content = tostring(doc, encoding=str)
 
-  pub_date = datetime.datetime.fromtimestamp(t_c)
+  pub_date = datetime.datetime.utcfromtimestamp(t_c)
 
   item = PyRSS2Gen.RSSItem(
     title = title.replace('\x08', ''),
