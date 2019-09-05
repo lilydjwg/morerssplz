@@ -87,7 +87,7 @@ async def activities2rss(name, digest=False, pic=None):
 
   while len(posts) < 20 and page < 3:
     paging = data['paging']
-    logger.debug('paging: %r', paging)
+    # logger.debug('paging: %r', paging)
     if paging['is_end']:
       break
     data = await zhihu_api.get_json(paging['next'])
