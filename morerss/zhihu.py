@@ -79,6 +79,12 @@ class ZhihuZhuanlanHandler(BaseHandler):
   async def get(self, name):
     pic = self.get_argument('pic', None)
     digest = self.get_argument('digest', False) == 'true'
+    fullonly = self.get_argument('fullonly', False) == 'true'
+    if digest and fullonly:
+      self.set_status(400)
+      self.set_header('Content-Type', 'text/plain')
+      self.finish('digest and fullonly cannot both be true.')
+      return
 
     baseurl = 'https://zhuanlan.zhihu.com/' + name
     res = await zhihulib.fetch_zhihu(baseurl)
@@ -102,7 +108,11 @@ class ZhihuZhuanlanHandler(BaseHandler):
     rss = base.data2rss(
       baseurl,
       rss_info, posts['data'],
-      partial(post2rss, url, digest=digest, pic=pic),
+      partial(
+        post2rss, url,
+        digest = digest, pic = pic,
+        fullonly = fullonly,
+      ),
     )
     xml = rss.to_xml(encoding='utf-8')
     self.finish(xml)
@@ -112,7 +122,7 @@ class ZhihuZhuanlanHandler(BaseHandler):
     info = json.loads(res.body.decode('utf-8'))
     return info
 
-def post2rss(baseurl, post, *, digest=False, pic=None):
+def post2rss(baseurl, post, *, digest=False, pic=None, fullonly=False):
   url = post['url']
   if digest:
     content = post['excerpt']
@@ -121,13 +131,18 @@ def post2rss(baseurl, post, *, digest=False, pic=None):
     article = article_from_cache(post['id'], post['updated'])
     if not article:
       base.STATSC.incr('zhihu.cache_miss')
-      content = post['excerpt'] + ' (全文尚不可用)'
-      content = zhihulib.process_content_for_html(content, pic=pic)
       try:
         _article_q.put_nowait(str(post['id']))
       except asyncio.QueueFull:
         logger.warning('_article_q full')
         base.STATSC.incr('zhihu.queue_full')
+
+      if fullonly:
+        return None
+
+      content = post['excerpt'] + ' (全文尚不可用)'
+      content = zhihulib.process_content_for_html(content, pic=pic)
+
     else:
       # logger.debug('cache hit for %s', post['id'])
       base.STATSC.incr('zhihu.cache_hit')
