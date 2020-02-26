@@ -93,6 +93,10 @@ class ZhihuManager:
     elif res.code == 302:
       if 'unhuman' in res.headers.get('Location'):
         raise web.HTTPError(503, 'Rate-limited')
+    # HTTP 301 Moved Permanently
+    elif res.code == 301:
+      url = res.headers.get('Location')
+      res = await self._do_fetch(url, kwargs)
     else:
       res.rethrow()
 

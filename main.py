@@ -15,6 +15,7 @@ from tornado.httpserver import HTTPServer
 from morerss import (
   ZhihuZhuanlanHandler,
   ZhihuStream,
+  ZhihuTopic,
   StaticZhihuHandler,
   V2exCommentHandler,
 )
@@ -24,6 +25,7 @@ routers = [
   # (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': static_dir}),
   (r'/zhihuzhuanlan/([^/]+)', ZhihuZhuanlanHandler),
   (r'/zhihu/([^/]+)', ZhihuStream),
+  (r'/zhihu_topic/([^/]+)', ZhihuTopic),
   (r'/static_zhihu/(\d+)', StaticZhihuHandler),
   (r'/v2ex/(\d+)', V2exCommentHandler),
 ]

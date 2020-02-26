@@ -22,7 +22,32 @@ class ZhihuAPI:
   user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:63.0) Gecko/20100101 Firefox/63.0'
 
   async def activities(self, name):
+    """
+    Get user activities data from Zhihu API
+    :param name (str): Zhihu user ID e.g., lilydjwg
+    :return (dict): deserialized user data
+    """
     url = 'members/%s/activities' % name
+    query = {
+      'desktop': 'True',
+      'after_id': str(int(time.time())),
+      'limit': '7',
+    }
+    url += '?' + urlencode(query)
+    data = await self.get_json(url)
+    return data
+
+  async def topic(self, name, sort='hot'):
+    """
+    Get topic data from Zhihu API
+    :param name (str): Zhihu topic ID e.g., 19551894
+    :return (dict): deserialized topic data
+    """
+    url = ''
+    if sort == 'hot':
+      url = 'topics/%s/feeds/top_activity' % name
+    elif sort == 'newest':
+      url = 'topics/%s/feeds/timeline_activity' % name
     query = {
       'desktop': 'True',
       'after_id': str(int(time.time())),
@@ -44,6 +69,11 @@ class ZhihuAPI:
     return json.loads(res.body.decode('utf-8'))
 
   async def card(self, name):
+    """
+    Zhihu member profile
+    :param name: Zhihu member ID
+    :return: dict - member's name, headline and url
+    """
     url = 'https://www.zhihu.com/node/MemberProfileCardV2?params=%s' % (quote(
       json.dumps({
         'url_token': name,
@@ -57,6 +87,7 @@ class ZhihuAPI:
     name = doc.xpath('//span[@class="name"]')[0].text_content()
     url = doc.xpath('//a[@class="avatar-link"]')[0].get('href')
 
+    # 知乎用户资料 - 一句话介绍
     tagline = doc.xpath('//div[@class="tagline"]')
     if tagline:
       headline = tagline[0].text_content()
@@ -67,6 +98,30 @@ class ZhihuAPI:
       'name': name,
       'headline': headline,
       'url': urljoin('https://www.zhihu.com/', url),
+    }
+
+  async def topic_intro(self, name):
+    """
+    Zhihu topic information
+    :param name: Zhihu topic slug
+    :return:
+    """
+    intro_url = 'https://www.zhihu.com/api/v4/topics/%s/intro' % name
+    res = await fetch_zhihu(
+      intro_url, headers={'User-Agent': self.user_agent})
+    if not res.body:
+      # e.g. https://www.zhihu.com/bei-feng-san-dai
+      raise web.HTTPError(404)
+    intro = json.loads(res.body.decode('utf-8'))
+    # topic name
+    name = intro['content']['meta']['name']
+    # topic description
+    description = intro['modules'][0]['target']['value']
+    url = urljoin('https://www.zhihu.com/topic', name)
+    return {
+      'name': name,
+      'description': description,
+      'url': url
     }
 
 zhihu_api = ZhihuAPI()
@@ -122,7 +177,10 @@ def post2rss(post, digest=False, pic=None):
     logger.warn('unknown type: %s', post['type'])
     return
 
-  if digest:
+  # Posts in Zhihu topics API response don't have the 'content' key by default
+  # Although they can include it by carrying verbose query params
+  # which are hard to maintain because Zhihu doesn't have public API documentation :(
+  if 'content' not in post or digest:
     content = post['excerpt']
   else:
     content = post['content']
@@ -148,6 +206,41 @@ def post2rss(post, digest=False, pic=None):
   )
   return item
 
+async def topic2rss(name, sort='hot', pic=None):
+  info = await zhihu_api.topic_intro(name)
+  url = info.get('url')
+  if sort == 'hot':
+    title = '%s - 知乎话题 - 热门排序 ' % info.get('name')
+  elif sort == 'newest':
+    title = '%s - 知乎话题 - 时间排序 ' % info.get('name')
+  info = {
+    'title': title,
+    'description': info.get('description')
+  }
+
+  page = 0
+  data = await zhihu_api.topic(name, sort)
+  posts = [x['target'] for x in data['data']]
+
+  while len(posts) < 20 and page < 3:
+    paging = data['paging']
+    # logger.debug('paging: %r', paging)
+    if paging['is_end']:
+      break
+    data = await zhihu_api.get_json(paging['next'])
+    posts.extend(
+      x['target'] for x in data['data']
+    )
+    page += 1
+
+  rss = base.data2rss(
+    url,
+    info, posts,
+    partial(post2rss, pic=pic)
+  )
+  xml = rss.to_xml(encoding='utf-8')
+  return xml
+
 class ZhihuStream(base.BaseHandler):
   async def get(self, name):
     if name.endswith(' '):
@@ -156,6 +249,23 @@ class ZhihuStream(base.BaseHandler):
     digest = self.get_argument('digest', False) == 'true'
 
     rss = await activities2rss(name, digest=digest, pic=pic)
+    self.finish(rss)
+
+class ZhihuTopic(base.BaseHandler):
+  async def get(self, name):
+    """
+    :param name (str): Zhihu topic slug, as "19551894" in "https://www.zhihu.com/topic/19551894/hot"
+    :return: Future with RSS content
+    """
+    if name.endswith(' '):
+      raise web.HTTPError(404)
+    sort = self.get_argument('sort', None)
+    # invalid sort param
+    if sort not in ('newest', 'hot'):
+      # Sort by popularity by default
+      sort = 'hot'
+    pic = self.get_argument('pic', None)
+    rss = await topic2rss(name, sort=sort, pic=pic)
     self.finish(rss)
 
 async def test():

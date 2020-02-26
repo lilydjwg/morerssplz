@@ -7,5 +7,6 @@ except ImportError:
 
 from .zhihu import ZhihuZhuanlanHandler
 from .zhihu_stream import ZhihuStream
+from .zhihu_stream import ZhihuTopic
 from .v2ex import V2exCommentHandler
 from .static_zhihu import StaticZhihuHandler
