@@ -37,17 +37,17 @@ class ZhihuAPI:
     data = await self.get_json(url)
     return data
 
-  async def topic(self, name, sort='hot'):
+  async def topic(self, id, sort='hot'):
     """
     Get topic data from Zhihu API
-    :param name (str): Zhihu topic ID e.g., 19551894
+    :param id (str): Zhihu topic ID e.g., 19551894
     :return (dict): deserialized topic data
     """
     url = ''
     if sort == 'hot':
-      url = 'topics/%s/feeds/top_activity' % name
+      url = 'topics/%s/feeds/top_activity' % id
     elif sort == 'newest':
-      url = 'topics/%s/feeds/timeline_activity' % name
+      url = 'topics/%s/feeds/timeline_activity' % id
     query = {
       'desktop': 'True',
       'after_id': str(int(time.time())),
@@ -100,27 +100,32 @@ class ZhihuAPI:
       'url': urljoin('https://www.zhihu.com/', url),
     }
 
-  async def topic_intro(self, name):
+  async def topic_info(self, id):
     """
     Zhihu topic information
-    :param name: Zhihu topic slug
-    :return:
+    :param id (str): Zhihu topic slug
+    :return (dict): dict containing the topic's name, description (omitted) and URL
     """
-    intro_url = 'https://www.zhihu.com/api/v4/topics/%s/intro' % name
-    res = await fetch_zhihu(
-      intro_url, headers={'User-Agent': self.user_agent})
-    if not res.body:
-      # e.g. https://www.zhihu.com/bei-feng-san-dai
+
+    url = urljoin('https://www.zhihu.com/topic/', id)
+
+    resp = await fetch_zhihu(
+      url, headers={'User-Agent': self.user_agent})
+    if not resp.body:
       raise web.HTTPError(404)
-    intro = json.loads(res.body.decode('utf-8'))
-    # topic name
-    name = intro['content']['meta']['name']
-    # topic description
-    description = intro['modules'][0]['target']['value']
-    url = urljoin('https://www.zhihu.com/topic', name)
+    doc = fromstring(resp.body.decode('utf-8'))
+
+    if doc.xpath('//div[@class="TopicMetaCard-title"]'):
+      name = doc.xpath('//div[@class="TopicMetaCard-title"]')[0].text_content()
+    elif doc.xpath('//h1[@class="TopicCard-titleText"]'):
+      name = doc.xpath('//h1[@class="TopicCard-titleText"]')[0].text_content()
+    else:
+      name = id
+
     return {
       'name': name,
-      'description': description,
+      # Omit the description
+      'description': '',
       'url': url
     }
 
@@ -188,6 +193,10 @@ def post2rss(post, digest=False, pic=None):
   content = content.replace('<code ', '<pre><code ')
   content = content.replace('</code>', '</code></pre>')
 
+  # Post only contains images but no text
+  if not content:
+    content = '<img src="%s">' % post.get('thumbnail')
+
   doc = fromstring(content)
   tidy_content(doc)
   if pic:
@@ -197,17 +206,18 @@ def post2rss(post, digest=False, pic=None):
   pub_date = datetime.datetime.utcfromtimestamp(t_c)
 
   item = PyRSS2Gen.RSSItem(
-    title = title.replace('\x08', ''),
-    link = url,
-    guid = url,
-    description = content.replace('\x08', ''),
-    pubDate = pub_date,
-    author = post['author']['name'],
+    title=title.replace('\x08', ''),
+    link=url,
+    guid=url,
+    description=content.replace('\x08', ''),
+    pubDate=pub_date,
+    author=post['author']['name'],
   )
   return item
 
-async def topic2rss(name, sort='hot', pic=None):
-  info = await zhihu_api.topic_intro(name)
+
+async def topic2rss(id, sort='hot', pic=None):
+  info = await zhihu_api.topic_info(id)
   url = info.get('url')
   if sort == 'hot':
     title = '%s - 知乎话题 - 热门排序 ' % info.get('name')
@@ -219,7 +229,7 @@ async def topic2rss(name, sort='hot', pic=None):
   }
 
   page = 0
-  data = await zhihu_api.topic(name, sort)
+  data = await zhihu_api.topic(id, sort)
   posts = [x['target'] for x in data['data']]
 
   while len(posts) < 20 and page < 3:
@@ -252,12 +262,12 @@ class ZhihuStream(base.BaseHandler):
     self.finish(rss)
 
 class ZhihuTopic(base.BaseHandler):
-  async def get(self, name):
+  async def get(self, id):
     """
-    :param name (str): Zhihu topic slug, as "19551894" in "https://www.zhihu.com/topic/19551894/hot"
+    :param id (str): Zhihu topic slug, as "19551894" in "https://www.zhihu.com/topic/19551894/hot"
     :return: Future with RSS content
     """
-    if name.endswith(' '):
+    if id.endswith(' '):
       raise web.HTTPError(404)
     sort = self.get_argument('sort', None)
     # invalid sort param
@@ -265,7 +275,7 @@ class ZhihuTopic(base.BaseHandler):
       # Sort by popularity by default
       sort = 'hot'
     pic = self.get_argument('pic', None)
-    rss = await topic2rss(name, sort=sort, pic=pic)
+    rss = await topic2rss(id, sort=sort, pic=pic)
     self.finish(rss)
 
 async def test():
