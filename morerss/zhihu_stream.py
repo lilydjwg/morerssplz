@@ -104,7 +104,7 @@ class ZhihuAPI:
     """
     Zhihu topic information
     :param id (str): Zhihu topic id
-    :return (dict): dict containing the topic's name, description (omitted) and URL
+    :return (dict): dict containing the topic's name, description and URL
     """
 
     url = urljoin('https://www.zhihu.com/topic/', id)
@@ -115,17 +115,20 @@ class ZhihuAPI:
       raise web.HTTPError(404)
     doc = fromstring(resp.body.decode('utf-8'))
 
-    if doc.xpath('//div[@class="TopicMetaCard-title"]'):
+    if doc.xpath('//*[contains(@class, "TopicMetaCard")]'):
       name = doc.xpath('//div[@class="TopicMetaCard-title"]')[0].text_content()
-    elif doc.xpath('//h1[@class="TopicCard-titleText"]'):
+      desc = doc.xpath('//div[contains(@class, "TopicMetaCard-description")]')[0].text_content()
+    elif doc.xpath('//*[contains(@class, "TopicCard")]'):
       name = doc.xpath('//h1[@class="TopicCard-titleText"]')[0].text_content()
+      desc = doc.xpath('//div[@class="TopicCard-ztext"]')[0].text_content()
+    # Unknown cases
     else:
       name = id
+      desc = '未找到话题描述'
 
     return {
       'name': name,
-      # Omit the description
-      'description': '',
+      'description': desc,
       'url': url
     }
 
