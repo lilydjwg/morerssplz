@@ -103,7 +103,7 @@ class ZhihuAPI:
   async def topic_info(self, id):
     """
     Zhihu topic information
-    :param id (str): Zhihu topic slug
+    :param id (str): Zhihu topic id
     :return (dict): dict containing the topic's name, description (omitted) and URL
     """
 
@@ -264,7 +264,7 @@ class ZhihuStream(base.BaseHandler):
 class ZhihuTopic(base.BaseHandler):
   async def get(self, id):
     """
-    :param id (str): Zhihu topic slug, as "19551894" in "https://www.zhihu.com/topic/19551894/hot"
+    :param id (str): Zhihu topic id, as "19551894" in "https://www.zhihu.com/topic/19551894/hot"
     :return: Future with RSS content
     """
     if id.endswith(' '):
