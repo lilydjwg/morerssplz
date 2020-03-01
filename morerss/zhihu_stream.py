@@ -167,32 +167,61 @@ async def activities2rss(name, digest=False, pic=None):
   xml = rss.to_xml(encoding='utf-8')
   return xml
 
-def post2rss(post, digest=False, pic=None):
+
+def post_content(post, digest=False):
+  content = ''
+
+  # question preview has neither "excerpt" nor "content"
+  if post['type'] == 'question':
+    content = post['title']
+  elif digest:
+    content = post['excerpt']
+  # Posts in Zhihu topics API response don't have the 'content' key by default
+  # Although they can include it by carrying verbose query params
+  # which are hard to maintain because Zhihu doesn't have public API documentation :(
+  elif 'content' not in post:
+    content = post['excerpt']
+  else:
+    content = post['content']
+
+  return content
+
+
+def post2rss(post, digest=False, pic=None, extra_types=()):
+  """
+  :param post (dict): 帖子数据
+  :param digest (bool): 输出摘要
+  :param pic (str): pic=cf 或 pic=google：指定图片代理提供方
+  :param extra_types (tuple): 除回答和文章之外的其他帖子类型
+  :return: PyRSS2Gen.RSSItem: post RSS item
+  """
   if post['type'] == 'answer':
     title = '[回答] %s' % post['question']['title']
     url = 'https://www.zhihu.com/question/%s/answer/%s' % (
       post['question']['id'], post['id'])
     t_c = post['created_time']
+    author = post['author']['name']
 
   elif post['type'] == 'article':
     title = '[文章] %s' % post['title']
     url = 'https://zhuanlan.zhihu.com/p/%s' % post['id']
     t_c = post['created']
+    author = post['author']['name']
+
+  elif 'question' in extra_types and post['type'] == 'question':
+    title = '[问题] %s' % post['title']
+    url = 'https://www.zhihu.com/question/%s' % (post['id'])
+    t_c = post['created']
+    author = None
 
   elif post['type'] in ['roundtable', 'live', 'column']:
     return
+
   else:
     logger.warn('unknown type: %s', post['type'])
     return
 
-  # Posts in Zhihu topics API response don't have the 'content' key by default
-  # Although they can include it by carrying verbose query params
-  # which are hard to maintain because Zhihu doesn't have public API documentation :(
-  if 'content' not in post or digest:
-    content = post['excerpt']
-  else:
-    content = post['content']
-
+  content = post_content(post, digest)
   content = content.replace('<code ', '<pre><code ')
   content = content.replace('</code>', '</code></pre>')
 
@@ -214,7 +243,7 @@ def post2rss(post, digest=False, pic=None):
     guid=url,
     description=content.replace('\x08', ''),
     pubDate=pub_date,
-    author=post['author']['name'],
+    author=author,
   )
   return item
 
@@ -249,7 +278,8 @@ async def topic2rss(id, sort='hot', pic=None):
   rss = base.data2rss(
     url,
     info, posts,
-    partial(post2rss, pic=pic)
+    # include question posts
+    partial(post2rss, pic=pic, extra_types=('question'))
   )
   xml = rss.to_xml(encoding='utf-8')
   return xml
