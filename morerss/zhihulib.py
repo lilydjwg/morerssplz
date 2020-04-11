@@ -11,7 +11,7 @@ from tornado.httpclient import HTTPRequest
 from tornado import web, httpclient
 from lxml.html import fromstring, tostring
 
-from . import base
+from . import base, pycurl
 try:
   from . import proxy
 except ImportError:
@@ -27,8 +27,9 @@ define("zhihu-proxy", default=False,
 class ZhihuManager:
   def __init__(self):
     # don't show GET xxx
-    from tornado.curl_httpclient import curl_log
-    curl_log.setLevel(logging.INFO)
+    if pycurl:
+      from tornado.curl_httpclient import curl_log
+      curl_log.setLevel(logging.INFO)
     self.proxies = []
 
   async def _do_fetch(self, url, kwargs):

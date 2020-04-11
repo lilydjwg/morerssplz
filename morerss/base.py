@@ -100,8 +100,6 @@ def proxify_pic(doc, pattern, pic):
     if pattern.match(src):
       img.set('src', p(src))
 
-httpclient.AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
-
 class MyApp(web.Application):
   def log_request(self, handler):
     super().log_request(handler)
