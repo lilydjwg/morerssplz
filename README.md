@@ -8,7 +8,7 @@
 * Tornado >= 5 (旧版本可能也可以用）
 * PyRSS2Gen
 * lxml
-* pycurl
+* pycurl (recommended but skip this if you're on Windows and get SSL errors)
 * statsd (the Python library)
 
 代理支持模块 `morerss.proxy` 是故意不提交的。如果需要，请自行实现。
