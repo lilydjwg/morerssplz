@@ -18,6 +18,7 @@ from morerss import (
   ZhihuTopic,
   StaticZhihuHandler,
   V2exCommentHandler,
+  TGChannelHandler,
 )
 from morerss.base import MyApp
 
@@ -28,6 +29,7 @@ routers = [
   (r'/zhihu_topic/([^/]+)', ZhihuTopic),
   (r'/static_zhihu/(\d+)', StaticZhihuHandler),
   (r'/v2ex/(\d+)', V2exCommentHandler),
+  (r'/tg/([^/]+)', TGChannelHandler),
 ]
 
 def main():
