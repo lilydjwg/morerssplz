@@ -269,7 +269,10 @@ async def topic2rss(id, sort='hot', pic=None):
     # logger.debug('paging: %r', paging)
     if paging['is_end']:
       break
-    data = await zhihu_api.get_json(paging['next'])
+    next_url = paging['next']
+    if next_url.startswith('http://'):
+      next_url = 'https://' + next_url[len('http://'):]
+    data = await zhihu_api.get_json(next_url)
     posts.extend(
       x['target'] for x in data['data']
     )
