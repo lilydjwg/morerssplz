@@ -98,8 +98,10 @@ class ZhihuZhuanlanHandler(BaseHandler):
     posts = await self._get_url(url)
 
     doc = fromstring(res.body.decode('utf-8'))
-    name = doc.xpath('//meta[@property="og:title"]')[0].get('content')
-    description = doc.xpath('//meta[@property="og:description"]')[0].get('content')
+    info = json.loads(doc.xpath('//script[@id="js-initialData"]')[0].text_content())
+    column_info = tuple(info['initialState']['entities']['columns'].values())[0]
+    name = column_info['title']
+    description = column_info['description']
     rss_info = {
       'title': '%s - 知乎专栏' % name,
       'description': description,
