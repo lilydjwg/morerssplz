@@ -37,6 +37,22 @@ class ZhihuAPI:
     data = await self.get_json(url)
     return data
 
+  async def pins(self, name):
+    """
+    Get user pins data from Zhihu API
+    :param name (str): Zhihu user ID e.g., lilydjwg
+    :return (dict): deserialized user pins data
+    """
+    url = 'members/%s/pins/' % name
+    query = {
+      'desktop': 'True',
+      'after_id': str(int(time.time())),
+      'limit': '7',
+    }
+    url += '?' + urlencode(query)
+    data = await self.get_json(url)
+    return data
+
   async def topic(self, id, sort='hot'):
     """
     Get topic data from Zhihu API
@@ -159,6 +175,11 @@ async def activities2rss(name, digest=False, pic=None):
     )
     page += 1
 
+  pins_data = await zhihu_api.pins(name)
+  pins = [pin for pin in pins_data['data']]
+
+  posts = sorted(pins + posts, key=lambda t: t['created_time'] if t.get('created_time') else t['created'])
+
   rss = base.data2rss(
     url,
     info, posts,
@@ -166,6 +187,24 @@ async def activities2rss(name, digest=False, pic=None):
   )
   xml = rss.to_xml(encoding='utf-8')
   return xml
+
+
+def pin_content(pin):
+  merged_content = ""
+  contents = pin['content']
+
+  for content in contents:
+    if content['type'] == 'text':
+      merged_content += content['content'] + '<br><br>'
+    elif content['type'] == 'link':
+      merged_content += '<a href="%s" target="_blank" rel="nofollow noreferrer">%s</a>' % (content['url'], content['title']) + '<br><br>'
+      pass
+    elif content['type'] == 'image':
+      merged_content += '<img src="%s" data-rawwidth="%s" data-rawheight="%s">' % (content['url'], content['width'], content['height']) + '<br><br>'
+    else:
+      logger.warn('unknown type: %s', content['type'])
+
+  return merged_content
 
 
 def post_content(post, digest=False):
@@ -208,6 +247,12 @@ def post2rss(post, digest=False, pic=None, extra_types=()):
     t_c = post['created']
     author = post['author']['name']
 
+  elif post['type'] == 'pin':
+    title = '[想法] %s' % post['excerpt_title']
+    url = 'https://www.zhihu.com/pin/%s' % post['id']
+    t_c = post['created']
+    author = post['author']['name']
+
   elif 'question' in extra_types and post['type'] == 'question':
     title = '[问题] %s' % post['title']
     url = 'https://www.zhihu.com/question/%s' % (post['id'])
@@ -221,7 +266,11 @@ def post2rss(post, digest=False, pic=None, extra_types=()):
     logger.warn('unknown type: %s', post['type'])
     return
 
-  content = post_content(post, digest)
+  if post['type'] == 'pin':
+    content = pin_content(post)
+  else:
+    content = post_content(post, digest)
+
   content = content.replace('<code ', '<pre><code ')
   content = content.replace('</code>', '</code></pre>')
 
