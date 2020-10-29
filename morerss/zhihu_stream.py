@@ -204,6 +204,12 @@ def pin_content(pin):
     else:
       logger.warn('unknown type: %s', content['type'])
 
+  if 'origin_pin' in pin:
+    origin_pin = pin['origin_pin']
+    if not origin_pin['is_deleted']:
+      merged_content += '<a href="https://www.zhihu.com/pin/%s" target="_blank" rel="nofollow noreferrer">%s</a>' % (origin_pin['id'], origin_pin['author']['name']) + '：<br><br>'
+      merged_content += pin_content(origin_pin)
+
   return merged_content
 
 
