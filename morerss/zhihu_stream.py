@@ -206,9 +206,13 @@ def pin_content(pin):
 
   if 'origin_pin' in pin:
     origin_pin = pin['origin_pin']
+
+    merged_content += '回复<a href="https://www.zhihu.com/people/%s" target="_blank" rel="nofollow noreferrer">%s</a>的<a href="https://www.zhihu.com/pin/%s" target="_blank" rel="nofollow noreferrer">想法</a>' % (origin_pin['author']['id'], origin_pin['author']['name'], origin_pin['id']) + '：<br><br>'
+
     if not origin_pin['is_deleted']:
-      merged_content += '<a href="https://www.zhihu.com/pin/%s" target="_blank" rel="nofollow noreferrer">%s</a>' % (origin_pin['id'], origin_pin['author']['name']) + '：<br><br>'
       merged_content += pin_content(origin_pin)
+    else:
+      merged_content += origin_pin['deleted_reason']
 
   return merged_content
 
