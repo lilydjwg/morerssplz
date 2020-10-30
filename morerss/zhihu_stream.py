@@ -53,6 +53,17 @@ class ZhihuAPI:
     data = await self.get_json(url)
     return data
 
+  async def collection_contents(self, id):
+    url = 'collections/%s/contents' % id
+    query = {
+      'desktop': 'True',
+      'after_id': str(int(time.time())),
+      'limit': '7',
+    }
+    url += '?' + urlencode(query)
+    data = await self.get_json(url)
+    return data
+
   async def topic(self, id, sort='hot'):
     """
     Get topic data from Zhihu API
@@ -147,6 +158,24 @@ class ZhihuAPI:
       'description': desc,
       'url': url
     }
+
+  async def collection_info(self, id):
+    """
+    Zhihu collection information
+    :param id (str): Zhihu collection id
+    :return (dict): dict containing the collection's title, description, creator and URL
+    """
+    url = 'collections/%s' % id
+    data = await self.get_json(url)
+    collection_data = data['collection']
+
+    return {
+      'title': collection_data['title'],
+      'description': collection_data['description'],
+      'creator': collection_data['creator'],
+      'url': urljoin('https://www.zhihu.com/collection/', str(collection_data['id'])),
+    }
+
 
 zhihu_api = ZhihuAPI()
 
@@ -307,6 +336,41 @@ def post2rss(post, digest=False, pic=None, extra_types=()):
   return item
 
 
+async def collection2rss(id, pic=None):
+  info = await zhihu_api.collection_info(id)
+  url = info['url']
+  info = {
+    'title': '%s - 知乎收藏夹' % info['title'],
+    'description': info['description'],
+  }
+
+  page = 0
+  data = await zhihu_api.collection_contents(id)
+  collection_contents = [x for x in data['data']]
+
+  while len(collection_contents) < 20 and page < 3:
+    paging = data['paging']
+    # logger.debug('paging: %r', paging)
+    if paging['is_end']:
+      break
+    next_url = paging['next']
+    if next_url.startswith('http://'):
+      next_url = 'https://' + next_url[len('http://'):]
+    data = await zhihu_api.get_json(next_url)
+    collection_contents.extend(
+      x for x in data['data']
+    )
+    page += 1
+
+  rss = base.data2rss(
+    url,
+    info, collection_contents,
+    partial(post2rss, pic=pic)
+  )
+  xml = rss.to_xml(encoding='utf-8')
+  return xml
+
+
 async def topic2rss(id, sort='hot', pic=None):
   info = await zhihu_api.topic_info(id)
   url = info.get('url')
@@ -371,6 +435,16 @@ class ZhihuTopic(base.BaseHandler):
       sort = 'hot'
     pic = self.get_argument('pic', None)
     rss = await topic2rss(id, sort=sort, pic=pic)
+    self.finish(rss)
+
+class ZhihuCollectionHandler(base.BaseHandler):
+  async def get(self, id):
+    if id.endswith(' '):
+      raise web.HTTPError(404)
+
+    pic = self.get_argument('pic', None)
+    rss = await collection2rss(id, pic=pic)
+
     self.finish(rss)
 
 async def test():
