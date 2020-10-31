@@ -340,7 +340,7 @@ async def collection2rss(id, pic=None):
   info = await zhihu_api.collection_info(id)
   url = info['url']
   info = {
-    'title': '%s - 知乎收藏夹 - %s' % (info['creator']['name'], info['title']),
+    'title': '%s - %s 的知乎收藏夹' % (info['title'], info['creator']['name']),
     'description': info['description'],
   }
 
