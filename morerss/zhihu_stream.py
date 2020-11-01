@@ -192,14 +192,6 @@ async def activities2rss(name, digest=False, pic=None):
   page = 0
 
   data = await zhihu_api.activities(name)
-
-  vote_ups = []
-  for x in data['data']:
-    if x['verb'] in VOTEUP_VERBS:
-      x['target']['type'] = x['verb']
-      x['target']['vote_up_time'] = x['created_time']
-      vote_ups.append(x['target'])
-
   posts = [x['target'] for x in data['data'] if x['verb'] in ACCEPT_VERBS]
 
   while len(posts) < 20 and page < 3:
@@ -216,11 +208,54 @@ async def activities2rss(name, digest=False, pic=None):
   pins_data = await zhihu_api.pins(name)
   pins = [pin for pin in pins_data['data']]
 
-  posts = sorted(pins + posts + vote_ups, key=lambda t: t['created_time'] if t.get('created_time') else t['created'])
+  posts = sorted(pins + posts, key=lambda t: t['created_time'] if t.get('created_time') else t['created'])
 
   rss = base.data2rss(
     url,
     info, posts,
+    partial(post2rss, digest=digest, pic=pic),
+  )
+  xml = rss.to_xml(encoding='utf-8')
+  return xml
+
+
+async def upvote2rss(name, digest=False, pic=None):
+  info = await zhihu_api.card(name)
+  url = info['url']
+  info = {
+    'title': '%s - 知乎赞同' % info['name'],
+    'description': info['headline'],
+  }
+
+  page = 0
+
+  data = await zhihu_api.activities(name)
+
+  vote_ups = []
+  for x in data['data']:
+    if x['verb'] in VOTEUP_VERBS:
+      x['target']['type'] = x['verb']
+      x['target']['vote_up_time'] = x['created_time']
+      vote_ups.append(x['target'])
+
+  while len(vote_ups) < 20 and page < 3:
+    paging = data['paging']
+    # logger.debug('paging: %r', paging)
+    if paging['is_end']:
+      break
+    data = await zhihu_api.get_json(paging['next'])
+
+    for x in data['data']:
+      if x['verb'] in VOTEUP_VERBS:
+        x['target']['type'] = x['verb']
+        x['target']['vote_up_time'] = x['created_time']
+        vote_ups.append(x['target'])
+
+    page += 1
+
+  rss = base.data2rss(
+    url,
+    info, vote_ups,
     partial(post2rss, digest=digest, pic=pic),
   )
   xml = rss.to_xml(encoding='utf-8')
@@ -475,6 +510,18 @@ class ZhihuCollectionHandler(base.BaseHandler):
 
     pic = self.get_argument('pic', None)
     rss = await collection2rss(id, pic=pic)
+
+    self.finish(rss)
+
+class ZhihuUpvoteHandler(base.BaseHandler):
+  async def get(self, name):
+    if name.endswith(' '):
+      raise web.HTTPError(404)
+
+    pic = self.get_argument('pic', None)
+    digest = self.get_argument('digest', False) == 'true'
+
+    rss = await upvote2rss(name, digest=digest, pic=pic)
 
     self.finish(rss)
 
