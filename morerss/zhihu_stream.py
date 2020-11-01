@@ -16,6 +16,7 @@ from .zhihulib import fetch_zhihu, re_zhihu_img, tidy_content
 logger = logging.getLogger(__name__)
 
 ACCEPT_VERBS = ['MEMBER_CREATE_ARTICLE', 'ANSWER_CREATE']
+VOTEUP_VERBS = ['MEMBER_VOTEUP_ARTICLE', 'ANSWER_VOTE_UP']
 
 class ZhihuAPI:
   baseurl = 'https://www.zhihu.com/api/v4/'
@@ -191,6 +192,14 @@ async def activities2rss(name, digest=False, pic=None):
   page = 0
 
   data = await zhihu_api.activities(name)
+
+  vote_ups = []
+  for x in data['data']:
+    if x['verb'] in VOTEUP_VERBS:
+      x['target']['type'] = x['verb']
+      x['target']['vote_up_time'] = x['created_time']
+      vote_ups.append(x['target'])
+
   posts = [x['target'] for x in data['data'] if x['verb'] in ACCEPT_VERBS]
 
   while len(posts) < 20 and page < 3:
@@ -207,7 +216,7 @@ async def activities2rss(name, digest=False, pic=None):
   pins_data = await zhihu_api.pins(name)
   pins = [pin for pin in pins_data['data']]
 
-  posts = sorted(pins + posts, key=lambda t: t['created_time'] if t.get('created_time') else t['created'])
+  posts = sorted(pins + posts + vote_ups, key=lambda t: t['created_time'] if t.get('created_time') else t['created'])
 
   rss = base.data2rss(
     url,
@@ -298,6 +307,19 @@ def post2rss(post, digest=False, pic=None, extra_types=()):
     t_c = post['created']
     author = None
 
+  elif post['type'] == 'ANSWER_VOTE_UP':
+    title = '[赞同了回答] %s' % post['question']['title']
+    url = 'https://www.zhihu.com/question/%s/answer/%s' % (
+      post['question']['id'], post['id'])
+    t_c = post['vote_up_time']
+    author = post['author']['name']
+
+  elif post['type'] == 'MEMBER_VOTEUP_ARTICLE':
+    title = '[赞同了文章] %s' % post['title']
+    url = 'https://zhuanlan.zhihu.com/p/%s' % post['id']
+    t_c = post['vote_up_time']
+    author = post['author']['name']
+
   elif post['type'] in ['roundtable', 'live', 'column']:
     return
 
@@ -309,6 +331,15 @@ def post2rss(post, digest=False, pic=None, extra_types=()):
     content = pin_content(post)
   else:
     content = post_content(post, digest)
+
+  if post['type'] == 'ANSWER_VOTE_UP':
+    content += "<p>回答发布于 %s </p>" % (datetime.datetime.utcfromtimestamp(post['created_time']).strftime('%Y-%m-%d %H:%M:%S'))
+    content += "<p>回答编辑于 %s </p>" % (datetime.datetime.utcfromtimestamp(post['updated_time']).strftime('%Y-%m-%d %H:%M:%S'))
+  elif post['type'] == 'MEMBER_VOTEUP_ARTICLE':
+    content += "<p>文章发布于 %s </p>" % (datetime.datetime.utcfromtimestamp(post['created']).strftime('%Y-%m-%d %H:%M:%S'))
+    content += "<p>文章编辑于 %s </p>" % (datetime.datetime.utcfromtimestamp(post['updated']).strftime('%Y-%m-%d %H:%M:%S'))
+  else:
+    pass
 
   content = content.replace('<code ', '<pre><code ')
   content = content.replace('</code>', '</code></pre>')
