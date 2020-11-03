@@ -343,14 +343,14 @@ def post2rss(post, digest=False, pic=None, extra_types=()):
     author = None
 
   elif post['type'] == 'ANSWER_VOTE_UP':
-    title = '[赞同了回答] %s' % post['question']['title']
+    title = '[赞同了回答] %s by %s' % (post['question']['title'], post['author']['name'])
     url = 'https://www.zhihu.com/question/%s/answer/%s' % (
       post['question']['id'], post['id'])
     t_c = post['vote_up_time']
     author = post['author']['name']
 
   elif post['type'] == 'MEMBER_VOTEUP_ARTICLE':
-    title = '[赞同了文章] %s' % post['title']
+    title = '[赞同了文章] %s by %s' % (post['title'], post['author']['name'])
     url = 'https://zhuanlan.zhihu.com/p/%s' % post['id']
     t_c = post['vote_up_time']
     author = post['author']['name']
