@@ -16,6 +16,7 @@ from .zhihulib import fetch_zhihu, re_zhihu_img, tidy_content
 logger = logging.getLogger(__name__)
 
 ACCEPT_VERBS = ['MEMBER_CREATE_ARTICLE', 'ANSWER_CREATE']
+VOTEUP_VERBS = ['MEMBER_VOTEUP_ARTICLE', 'ANSWER_VOTE_UP']
 
 class ZhihuAPI:
   baseurl = 'https://www.zhihu.com/api/v4/'
@@ -218,6 +219,49 @@ async def activities2rss(name, digest=False, pic=None):
   return xml
 
 
+async def upvote2rss(name, digest=False, pic=None):
+  info = await zhihu_api.card(name)
+  url = info['url']
+  info = {
+    'title': '%s - 知乎赞同' % info['name'],
+    'description': info['headline'],
+  }
+
+  page = 0
+
+  data = await zhihu_api.activities(name)
+
+  vote_ups = []
+  for x in data['data']:
+    if x['verb'] in VOTEUP_VERBS:
+      x['target']['type'] = x['verb']
+      x['target']['vote_up_time'] = x['created_time']
+      vote_ups.append(x['target'])
+
+  while len(vote_ups) < 20 and page < 3:
+    paging = data['paging']
+    # logger.debug('paging: %r', paging)
+    if paging['is_end']:
+      break
+    data = await zhihu_api.get_json(paging['next'])
+
+    for x in data['data']:
+      if x['verb'] in VOTEUP_VERBS:
+        x['target']['type'] = x['verb']
+        x['target']['vote_up_time'] = x['created_time']
+        vote_ups.append(x['target'])
+
+    page += 1
+
+  rss = base.data2rss(
+    url,
+    info, vote_ups,
+    partial(post2rss, digest=digest, pic=pic),
+  )
+  xml = rss.to_xml(encoding='utf-8')
+  return xml
+
+
 def pin_content(pin):
   merged_content = ""
   contents = pin['content']
@@ -298,6 +342,19 @@ def post2rss(post, digest=False, pic=None, extra_types=()):
     t_c = post['created']
     author = None
 
+  elif post['type'] == 'ANSWER_VOTE_UP':
+    title = '[赞同了回答] %s by %s' % (post['question']['title'], post['author']['name'])
+    url = 'https://www.zhihu.com/question/%s/answer/%s' % (
+      post['question']['id'], post['id'])
+    t_c = post['vote_up_time']
+    author = post['author']['name']
+
+  elif post['type'] == 'MEMBER_VOTEUP_ARTICLE':
+    title = '[赞同了文章] %s by %s' % (post['title'], post['author']['name'])
+    url = 'https://zhuanlan.zhihu.com/p/%s' % post['id']
+    t_c = post['vote_up_time']
+    author = post['author']['name']
+
   elif post['type'] in ['roundtable', 'live', 'column']:
     return
 
@@ -309,6 +366,15 @@ def post2rss(post, digest=False, pic=None, extra_types=()):
     content = pin_content(post)
   else:
     content = post_content(post, digest)
+
+  if post['type'] == 'ANSWER_VOTE_UP':
+    content += "<p>回答发布于 %s </p>" % (datetime.datetime.utcfromtimestamp(post['created_time']).strftime('%Y-%m-%d %H:%M:%S'))
+    content += "<p>回答编辑于 %s </p>" % (datetime.datetime.utcfromtimestamp(post['updated_time']).strftime('%Y-%m-%d %H:%M:%S'))
+  elif post['type'] == 'MEMBER_VOTEUP_ARTICLE':
+    content += "<p>文章发布于 %s </p>" % (datetime.datetime.utcfromtimestamp(post['created']).strftime('%Y-%m-%d %H:%M:%S'))
+    content += "<p>文章编辑于 %s </p>" % (datetime.datetime.utcfromtimestamp(post['updated']).strftime('%Y-%m-%d %H:%M:%S'))
+  else:
+    pass
 
   content = content.replace('<code ', '<pre><code ')
   content = content.replace('</code>', '</code></pre>')
@@ -444,6 +510,18 @@ class ZhihuCollectionHandler(base.BaseHandler):
 
     pic = self.get_argument('pic', None)
     rss = await collection2rss(id, pic=pic)
+
+    self.finish(rss)
+
+class ZhihuUpvoteHandler(base.BaseHandler):
+  async def get(self, name):
+    if name.endswith(' '):
+      raise web.HTTPError(404)
+
+    pic = self.get_argument('pic', None)
+    digest = self.get_argument('digest', False) == 'true'
+
+    rss = await upvote2rss(name, digest=digest, pic=pic)
 
     self.finish(rss)
 
