@@ -271,7 +271,6 @@ def pin_content(pin):
       merged_content += content['content'] + '<br><br>'
     elif content['type'] == 'link':
       merged_content += '<a href="%s" target="_blank" rel="nofollow noreferrer">%s</a>' % (content['url'], content['title']) + '<br><br>'
-      pass
     elif content['type'] == 'image':
       merged_content += '<img src="%s" data-rawwidth="%s" data-rawheight="%s">' % (content['url'], content['width'], content['height']) + '<br><br>'
     else:
