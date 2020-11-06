@@ -78,6 +78,8 @@ class ZhihuManager:
     return res
 
   async def fetch_zhihu(self, url, **kwargs):
+    if url.startswith('http://'):
+      url = 'https://' + url[len('http://'):]
     kwargs.setdefault('follow_redirects', False)
     kwargs.setdefault('user_agent', 'Mozilla/5.0 (X11; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0')
     kwargs.pop('raise_error', None)
@@ -99,6 +101,9 @@ class ZhihuManager:
       url = res.headers.get('Location')
       res = await self._do_fetch(url, kwargs)
     else:
+      if res.error:
+        logger.error('error fetching url: %s', url)
+        print(res.headers, res.body[:100])
       res.rethrow()
 
     return res

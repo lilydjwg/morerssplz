@@ -420,8 +420,6 @@ async def collection2rss(id, pic=None):
     if paging['is_end']:
       break
     next_url = paging['next']
-    if next_url.startswith('http://'):
-      next_url = 'https://' + next_url[len('http://'):]
     data = await zhihu_api.get_json(next_url)
     collection_contents.extend(
       x for x in data['data']
@@ -459,8 +457,6 @@ async def topic2rss(id, sort='hot', pic=None):
     if paging['is_end']:
       break
     next_url = paging['next']
-    if next_url.startswith('http://'):
-      next_url = 'https://' + next_url[len('http://'):]
     data = await zhihu_api.get_json(next_url)
     posts.extend(
       x['target'] for x in data['data']
