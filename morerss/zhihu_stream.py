@@ -274,7 +274,7 @@ def pin_content(pin):
     elif content['type'] == 'image':
       merged_content += '<img src="%s">' % content['url'] + '<br><br>'
     elif content['type'] == 'video':
-      merged_content += '此处<a href="https://www.zhihu.com/video/%s">视频</a>预览图如下：<br><br><a href="https://www.zhihu.com/video/%s"><img src="%s" ></a>' % (content['id'], content['id'], content['cover_info']['thumbnail'])
+      merged_content += '此处<a href="https://www.zhihu.com/video/%s">视频</a>预览图如下：<br><br><a href="https://www.zhihu.com/video/%s"><img src="%s" ></a><br><br>' % (content['id'], content['id'], content['cover_info']['thumbnail'])
     else:
       logger.warn('unknown type: %s', content['type'])
 
