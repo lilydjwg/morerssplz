@@ -103,7 +103,7 @@ class ZhihuManager:
     else:
       if res.error:
         logger.error('error fetching url: %s', url)
-        print(res.headers, res.body[:100])
+        # print(res.headers, res.body and res.body[:100])
       res.rethrow()
 
     return res
