@@ -273,6 +273,8 @@ def pin_content(pin):
       merged_content += '<a href="%s" target="_blank" rel="nofollow noreferrer">%s</a>' % (content['url'], content['title']) + '<br><br>'
     elif content['type'] == 'image':
       merged_content += '<img src="%s" data-rawwidth="%s" data-rawheight="%s">' % (content['url'], content['width'], content['height']) + '<br><br>'
+    elif content['type'] == 'video':
+      merged_content += '此处<a href="https://www.zhihu.com/video/%s">视频</a>预览图如下：<br><br><img src="%s" data-rawwidth="%s" data-rawheight="%s">' % (content['id'], content['cover_info']['thumbnail'], content['cover_info']['width'], content['cover_info']['height'])
     else:
       logger.warn('unknown type: %s', content['type'])
 
@@ -531,7 +533,9 @@ async def test():
 
 if __name__ == '__main__':
   import tornado.ioloop
-  from nicelogger import enable_pretty_logging
-  enable_pretty_logging('DEBUG')
+
+  # from nicelogger import enable_pretty_logging
+  # enable_pretty_logging('DEBUG')
+
   loop = tornado.ioloop.IOLoop.current()
   loop.run_sync(test)
