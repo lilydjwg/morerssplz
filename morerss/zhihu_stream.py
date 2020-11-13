@@ -85,6 +85,17 @@ class ZhihuAPI:
     data = await self.get_json(url)
     return data
 
+  async def answers(self, id, sort='created'):
+    url = 'questions/%s/answers?sort_by=%s&include=content' % (id, sort)
+    query = {
+      'desktop': 'True',
+      'after_id': str(int(time.time())),
+      'limit': '7',
+    }
+    url += '&' + urlencode(query)
+    data = await self.get_json(url)
+    return data
+
   async def get_json(self, url):
     url = urljoin(self.baseurl, url)
     headers = {
@@ -177,6 +188,20 @@ class ZhihuAPI:
       'url': urljoin('https://www.zhihu.com/collection/', str(collection_data['id'])),
     }
 
+  async def question_info(self, id):
+    """
+    Zhihu question information
+    :param id (str): Zhihu question id
+    :return (dict): dict containing the question's title and URL
+    """
+    url = 'questions/%s?include=detail' % id
+    data = await self.get_json(url)
+
+    return {
+      'title': data['title'],
+      'description': data['detail'],
+      'url': urljoin('https://www.zhihu.com/question/', str(data['id'])),
+    }
 
 zhihu_api = ZhihuAPI()
 
@@ -356,6 +381,13 @@ def post2rss(post, digest=False, pic=None, extra_types=()):
     t_c = post['vote_up_time']
     author = post['author']['name']
 
+  elif post['type'] == 'QUESTION_ANSWER':
+    title = '%s 的回答' % post['author']['name']
+    url = 'https://www.zhihu.com/question/%s/answer/%s' % (
+      post['question']['id'], post['id'])
+    t_c = post['created_time']
+    author = post['author']['name']
+
   elif post['type'] in ['roundtable', 'live', 'column']:
     return
 
@@ -473,6 +505,45 @@ async def topic2rss(id, sort='hot', pic=None):
   xml = rss.to_xml(encoding='utf-8')
   return xml
 
+
+async def question2rss(id, sort='created', pic=None):
+  info = await zhihu_api.question_info(id)
+  url = info['url']
+
+  if sort == 'created':
+    title = '%s - 知乎问题 - 时间排序 ' % info['title']
+  elif sort == 'default':
+    title = '%s - 知乎问题 - 默认排序 ' % info['title']
+
+  info = {
+    'title': title,
+    'description': info['description']
+  }
+
+  page = 0
+  data = await zhihu_api.answers(id, sort)
+
+  answers = [{**x, 'type': 'QUESTION_ANSWER'} for x in data['data']]
+
+  while len(answers) < 20 and page < 3:
+    paging = data['paging']
+    if paging['is_end']:
+      break
+    next_url = paging['next']
+    data = await zhihu_api.get_json(next_url)
+    answers.extend({**x, 'type': 'QUESTION_ANSWER'} for x in data['data'])
+    page += 1
+
+  rss = base.data2rss(
+    url,
+    info, answers,
+    partial(post2rss, pic=pic)
+  )
+  xml = rss.to_xml(encoding='utf-8')
+
+  return xml
+
+
 class ZhihuStream(base.BaseHandler):
   async def get(self, name):
     if name.endswith(' '):
@@ -519,6 +590,22 @@ class ZhihuUpvoteHandler(base.BaseHandler):
     digest = self.get_argument('digest', False) == 'true'
 
     rss = await upvote2rss(name, digest=digest, pic=pic)
+
+    self.finish(rss)
+
+class ZhihuQuestionHandler(base.BaseHandler):
+  async def get(self, id):
+    if id.endswith(' '):
+      raise web.HTTPError(404)
+
+    sort = self.get_argument('sort', None)
+    if sort not in ('default', 'created'):
+      # Sort by created time by default
+      sort = 'created'
+
+    pic = self.get_argument('pic', None)
+
+    rss = await question2rss(id, sort=sort, pic=pic)
 
     self.finish(rss)
 
