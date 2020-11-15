@@ -594,7 +594,7 @@ class ZhihuUpvoteHandler(base.BaseHandler):
     self.finish(rss)
 
 class ZhihuQuestionHandler(base.BaseHandler):
-   async def get(self, id):
+  async def get(self, id):
     if id.endswith(' '):
       raise web.HTTPError(404)
 
