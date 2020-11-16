@@ -55,7 +55,7 @@ class ZhihuAPI:
     return data
 
   async def collection_contents(self, id):
-    url = 'collections/%s/contents' % id
+    url = 'collections/%s/items' % id
     query = {
       'desktop': 'True',
       'after_id': str(int(time.time())),
@@ -445,7 +445,7 @@ async def collection2rss(id, pic=None):
 
   page = 0
   data = await zhihu_api.collection_contents(id)
-  collection_contents = [x for x in data['data']]
+  collection_contents = [x['content'] for x in data['data']]
 
   while len(collection_contents) < 20 and page < 3:
     paging = data['paging']
@@ -455,7 +455,7 @@ async def collection2rss(id, pic=None):
     next_url = paging['next']
     data = await zhihu_api.get_json(next_url)
     collection_contents.extend(
-      x for x in data['data']
+      x['content'] for x in data['data']
     )
     page += 1
 
