@@ -462,7 +462,6 @@ async def collection2rss(id, pic=None):
   collection_contents = []
   for x in data['data']:
     x['content']['type'] = 'MEMBER_COLLECT_' + x['content']['type'].upper()
-    print(x['content']['type'])
     collection_contents.append(x['content'])
 
   while len(collection_contents) < 20 and page < 3:
