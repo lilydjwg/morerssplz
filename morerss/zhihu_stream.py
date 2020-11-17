@@ -388,6 +388,19 @@ def post2rss(post, digest=False, pic=None, extra_types=()):
     t_c = post['created_time']
     author = post['author']['name']
 
+  elif post['type'] == 'MEMBER_COLLECT_ANSWER':
+    title = '[收藏了回答] %s by %s' % (post['question']['title'], post['author']['name'])
+    url = 'https://www.zhihu.com/question/%s/answer/%s' % (
+      post['question']['id'], post['id'])
+    t_c = post['created_time']
+    author = post['author']['name']
+
+  elif post['type'] == 'MEMBER_COLLECT_ARTICLE':
+    title = '[收藏了文章] %s by %s' % (post['title'], post['author']['name'])
+    url = 'https://zhuanlan.zhihu.com/p/%s' % post['id']
+    t_c = post['created']
+    author = post['author']['name']
+
   elif post['type'] in ['roundtable', 'live', 'column']:
     return
 
@@ -445,7 +458,12 @@ async def collection2rss(id, pic=None):
 
   page = 0
   data = await zhihu_api.collection_contents(id)
-  collection_contents = [x['content'] for x in data['data']]
+
+  collection_contents = []
+  for x in data['data']:
+    x['content']['type'] = 'MEMBER_COLLECT_' + x['content']['type'].upper()
+    print(x['content']['type'])
+    collection_contents.append(x['content'])
 
   while len(collection_contents) < 20 and page < 3:
     paging = data['paging']
@@ -454,9 +472,9 @@ async def collection2rss(id, pic=None):
       break
     next_url = paging['next']
     data = await zhihu_api.get_json(next_url)
-    collection_contents.extend(
-      x['content'] for x in data['data']
-    )
+    for x in data['data']:
+      x['content']['type'] = 'MEMBER_COLLECT_' + x['content']['type'].upper()
+      collection_contents.append(x['content'])
     page += 1
 
   rss = base.data2rss(
