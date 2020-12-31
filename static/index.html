@@ -13,7 +13,7 @@
 
 <h2>知乎专栏</h2>
 <p>将知乎专栏首页地址里的用户名写到 <code>https://rss.lilydjwg.me/zhihuzhuanlan/</code> 之后即可。<br>
-如专栏首页是 <a href="https://zhuanlan.zhihu.com/dingxiangyisheng">https://zhuanlan.zhihu.com/dingxiangyisheng</a>，则订阅地址为 <a href="/zhihuzhuanlan/dingxiangyisheng">https://rss.lilydjwg.me/zhihuzhuanlan/dingxiangyisheng</a> .</p>
+如专栏首页是 <a href="https://zhuanlan.zhihu.com/dingxiangyisheng">https://zhuanlan.zhihu.com/dingxiangyisheng</a> 或者 <a href="https://www.zhihu.com/column/dingxiangyisheng">https://www.zhihu.com/column/dingxiangyisheng</a>，则订阅地址为 <a href="/zhihuzhuanlan/dingxiangyisheng">https://rss.lilydjwg.me/zhihuzhuanlan/dingxiangyisheng</a> .</p>
 <p>query 参数：</p>
 <ul>
   <li><code>pic=cf</code> 或 <code>pic=google</code>：指定图片代理提供方（下详）</li>
@@ -26,19 +26,35 @@
   var zhihuzhuanlan_go = function(){
     var u = 'https://rss.lilydjwg.me/zhihuzhuanlan/';
     var l = document.getElementById('zhihuzhuanlan-url').value;
-    if(l.indexOf('//zhuanlan.zhihu.com/') > 6){
+    var urlParser = document.createElement('a');
+    urlParser.href = l;
+
+    var match;
+    if (
+      // e.g. https://zhuanlan.zhihu.com/dingxiangyisheng
+      urlParser.hostname == 'zhuanlan.zhihu.com' &&
+      (match = urlParser.pathname.match(/\/([^/]+)\/?/))
+    ) {
+      u += match[1];
+    } else if (
+      // e.g. https://www.zhihu.com/column/dingxiangyisheng
+      urlParser.hostname === 'www.zhihu.com' &&
+      (match = urlParser.pathname.match(/\/column\/([^/]+)\/?/))
+    ) {
+      u += match[1];
+    } else {
       alert('请填写知乎专栏链接。');
       return;
     }
-    u += l.split('/')[3];
-    window.open(u);
-  };
+
+  window.open(u);
+};
 </script>
 <p>知乎专栏链接：<input type="text" id="zhihuzhuanlan-url"/><input type="button" value="Go" onclick="zhihuzhuanlan_go();"/></p>
 
 <p>这里还有些好用的小书签，拖拽到浏览器书签之后在知乎专栏页面使用即可：<br>
-  <a href="javascript:(function(){var%20u='https://rss.lilydjwg.me/zhihuzhuanlan/';var%20l=location;if(l.host!='zhuanlan.zhihu.com'){alert('%E8%AF%B7%E5%9C%A8%E7%9F%A5%E4%B9%8E%E4%B8%93%E6%A0%8F%E9%A1%B5%E9%9D%A2%E4%BD%BF%E7%94%A8%E3%80%82');return}u+=l.pathname.split('/')[1];l.href=u})()">订阅知乎专栏</a><br>
-  <a href="javascript:(function(){var%20u='https://www.inoreader.com/?add_feed=https://rss.lilydjwg.me/zhihuzhuanlan/';var%20l=location;if(l.host!='zhuanlan.zhihu.com'){alert('%E8%AF%B7%E5%9C%A8%E7%9F%A5%E4%B9%8E%E4%B8%93%E6%A0%8F%E9%A1%B5%E9%9D%A2%E4%BD%BF%E7%94%A8%E3%80%82');return}u+=l.pathname.split('/')[1];l.href=u})()">订阅知乎专栏到 Inoreader</a>
+  <a href="javascript:void%20function(){var%20a,b=%22https://rss.lilydjwg.me/zhihuzhuanlan/%22,c=location;if(%22zhuanlan.zhihu.com%22==c.host%26%26(a=location.pathname.match(/\/([^/]+)\/%3F/)))b+=a[1];else%20if(%22www.zhihu.com%22===c.host%26%26(a=location.pathname.match(/\/column\/([^/]+)\/%3F/)))b+=a[1];else%20return%20void%20alert(%22\u8BF7\u5728\u77E5\u4E4E\u4E13\u680F\u9875\u9762\u4F7F\u7528\u3002%22);c.href=b}();">订阅知乎专栏</a><br>
+  <a href="javascript:void%20function(){var%20a,b=%22https://www.inoreader.com/%3Fadd_feed=https://rss.lilydjwg.me/zhihuzhuanlan/%22,c=location;if(%22zhuanlan.zhihu.com%22==c.host%26%26(a=location.pathname.match(/\/([^/]+)\/%3F/)))b+=a[1];else%20if(%22www.zhihu.com%22===c.host%26%26(a=location.pathname.match(/\/column\/([^/]+)\/%3F/)))b+=a[1];else%20return%20void%20alert(%22\u8BF7\u5728\u77E5\u4E4E\u4E13\u680F\u9875\u9762\u4F7F\u7528\u3002%22);c.href=b}();">订阅知乎专栏到 Inoreader</a>
 </p>
 
 <p><b>如果你发现访问的文章中图片没有显示</b>，那是因为知乎做了处理。解决方案如下：</p>
