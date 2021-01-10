@@ -78,7 +78,6 @@ class ZhihuAPI:
       url = 'topics/%s/feeds/timeline_activity' % id
     query = {
       'desktop': 'True',
-      'after_id': str(int(time.time())),
       'limit': '7',
     }
     url += '?' + urlencode(query)
