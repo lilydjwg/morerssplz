@@ -19,7 +19,6 @@ ACCEPT_VERBS = ['MEMBER_CREATE_ARTICLE', 'ANSWER_CREATE']
 VOTEUP_VERBS = ['MEMBER_VOTEUP_ARTICLE', 'ANSWER_VOTE_UP']
 
 class ZhihuAPI:
-  baseurl = 'https://www.zhihu.com/api/v4/'
   user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:63.0) Gecko/20100101 Firefox/63.0'
 
   async def activities(self, name):
@@ -28,14 +27,15 @@ class ZhihuAPI:
     :param name (str): Zhihu user ID e.g., lilydjwg
     :return (dict): deserialized user data
     """
-    url = 'members/%s/activities' % name
+    baseurl = 'https://www.zhihu.com/api/v3/'
+    url = 'moments/%s/activities' % name
     query = {
       'desktop': 'True',
       'after_id': str(int(time.time())),
       'limit': '7',
     }
     url += '?' + urlencode(query)
-    data = await self.get_json(url)
+    data = await self.get_json(url, api_version='v3')
     return data
 
   async def pins(self, name):
@@ -95,8 +95,9 @@ class ZhihuAPI:
     data = await self.get_json(url)
     return data
 
-  async def get_json(self, url):
-    url = urljoin(self.baseurl, url)
+  async def get_json(self, url, api_version='v4'):
+    baseurl = 'https://www.zhihu.com/api/%s/' % (api_version)
+    url = urljoin(baseurl, url)
     headers = {
       'User-Agent': self.user_agent,
       'Authorization': 'oauth c3cef7c66a1843f8b3a9e6a1e3160e20', # hard-coded in js
