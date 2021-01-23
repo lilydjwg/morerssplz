@@ -233,7 +233,7 @@ async def activities2rss(name, digest=False, pic=None):
   pins_data = await zhihu_api.pins(name)
   pins = [pin for pin in pins_data['data']]
 
-  posts = sorted(pins + posts, key=lambda t: t['created_time'] if t.get('created_time') else t['created'])
+  posts = sorted(pins + posts, reverse=True, key=lambda t: t['created_time'] if t.get('created_time') else t['created'])
 
   rss = base.data2rss(
     url,
