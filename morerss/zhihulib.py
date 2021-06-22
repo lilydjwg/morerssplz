@@ -1,5 +1,4 @@
 import logging
-import random
 import json
 from typing import Optional
 from urllib.parse import urlsplit, parse_qs
@@ -30,7 +29,6 @@ class ZhihuManager:
     if pycurl:
       from tornado.curl_httpclient import curl_log
       curl_log.setLevel(logging.INFO)
-    self.proxies = []
 
   async def _do_fetch(self, url, kwargs):
     if proxy and options.zhihu_proxy:
@@ -44,38 +42,25 @@ class ZhihuManager:
     return res
 
   async def _do_fetch_with_proxy(self, url, kwargs):
-    if len(self.proxies) < 10:
-      self.proxies.extend([x, 16] for x in (await proxy.get_proxies()))
+    async with proxy.get_proxy() as p:
+      host, port = p.rsplit(':', 1)
 
-    p = random.choice(self.proxies)
-    logger.debug('Using proxy %s, %d in memory', p, len(self.proxies))
-    score = p[1]
-    host, port = p[0].rsplit(':', 1)
+      req = HTTPRequest(
+        url, proxy_host = host, proxy_port = int(port),
+        request_timeout = 10,
+        validate_cert = False,
+        **kwargs,
+      )
 
-    req = HTTPRequest(
-      url, proxy_host = host, proxy_port = int(port),
-      request_timeout = 10,
-      validate_cert = False,
-      **kwargs,
-    )
+      res = await _httpclient.fetch(req, raise_error=False)
 
-    res = await _httpclient.fetch(req, raise_error=False)
-    try:
-      if res.code in [599, 403]:
-        score >>= 1
-      elif res.code == 302 and 'unhuman' in res.headers.get('Location'):
-        logger.debug('proxy %s is unhuman-ed by zhihu', p)
-        score = 0
-      else:
-        score += 1
+      if res.code == 302 and 'unhuman' in res.headers.get('Location'):
+        logger.warning('proxy %s is unhuman-ed by zhihu', p)
+        raise Exception('unhuman-ed proxy')
+      elif res.code == 403:
+        res.rethrow()
 
-      if score == 0:
-        self.proxies.remove(p)
-      else:
-        p[1] = score
-    except ValueError:
-      pass # already removed by another request
-    return res
+      return res
 
   async def fetch_zhihu(self, url, **kwargs):
     if url.startswith('http://'):
