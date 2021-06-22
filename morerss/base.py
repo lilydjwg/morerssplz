@@ -50,6 +50,10 @@ class BaseHandler(web.RequestHandler):
         else:
           err_msg = str(err_exc) + '.'
 
+      if status_code in [302, 400, 403, 404, 405]:
+        # cache some errors
+        self.set_header('Cache-Control', 'public, max-age=14400')
+
       self.finish(self.error_page % {
         "code": status_code,
         "message": http.client.responses[status_code],
