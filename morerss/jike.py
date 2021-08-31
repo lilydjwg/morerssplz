@@ -78,3 +78,37 @@ class JikeUserHandler(base.BaseHandler):
     else:
       res.rethrow()
     return res.body.decode('utf-8')
+
+
+class JikeTopicHandler(base.BaseHandler):
+  async def get(self, tid):
+    url = f'https://m.okjike.com/topics/{tid}'
+    webpage = await self._get_url(url)
+
+    doc = fromstring(webpage, base_url=url)
+    doc.make_links_absolute()
+
+    data = json.loads(doc.xpath('//script[@type="application/json"]')[0].text_content())['props']['pageProps']
+
+    rss_info = {
+      'title': '%s - 即刻圈子' % data['topic']['content'],
+      'description': data['topic']['briefIntro'],
+    }
+
+    rss = base.data2rss(
+      url,
+      rss_info,
+      data['posts'],
+      partial(post2rss),
+    )
+
+    xml = rss.to_xml(encoding='utf-8')
+    self.finish(xml)
+
+  async def _get_url(self, url):
+    res = await httpclient.fetch(url, raise_error=False)
+    if res.code in [404, 429]:
+      raise web.HTTPError(res.code)
+    else:
+      res.rethrow()
+    return res.body.decode('utf-8')

@@ -23,6 +23,7 @@ from morerss import (
   V2exCommentHandler,
   TGChannelHandler,
   JikeUserHandler,
+  JikeTopicHandler,
 )
 from morerss.base import MyApp
 
@@ -38,6 +39,7 @@ routers = [
   (r'/v2ex/(\d+)', V2exCommentHandler),
   (r'/tg/([^/]+)', TGChannelHandler),
   (r'/jike_user/([^/]+)', JikeUserHandler),
+  (r'/jike_topic/([^/]+)', JikeTopicHandler),
 ]
 
 def main():

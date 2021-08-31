@@ -6,6 +6,7 @@ except ImportError:
   pycurl = None
 
 from .jike import JikeUserHandler
+from .jike import JikeTopicHandler
 from .zhihu import ZhihuZhuanlanHandler
 from .zhihu_stream import ZhihuStream
 from .zhihu_stream import ZhihuTopic
