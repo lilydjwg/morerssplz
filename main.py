@@ -22,6 +22,7 @@ from morerss import (
   StaticZhihuHandler,
   V2exCommentHandler,
   TGChannelHandler,
+  JikeUserHandler,
 )
 from morerss.base import MyApp
 
@@ -36,6 +37,7 @@ routers = [
   (r'/static_zhihu/(\d+)', StaticZhihuHandler),
   (r'/v2ex/(\d+)', V2exCommentHandler),
   (r'/tg/([^/]+)', TGChannelHandler),
+  (r'/jike_user/([^/]+)', JikeUserHandler),
 ]
 
 def main():
