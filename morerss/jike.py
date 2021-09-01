@@ -27,8 +27,11 @@ def post2rss(post):
 
   description = content + '<br/><br/>'
 
-  for picture in post['pictures']:
-      description += "<img src='%s'/><br/>" % picture['thumbnailUrl']
+  for i, picture in enumerate(post['pictures']):
+    description += '''<div style="align:left; text-align:center;">
+                        <img src="%s" />
+                        <div>图 %s/%s</div>
+                      </div><br/>''' % (picture.get('thumbnailUrl'), i+1, len(post['pictures']))
 
   if 'topic' in post:
       topic = post['topic']
