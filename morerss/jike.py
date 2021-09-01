@@ -27,6 +27,26 @@ def post2rss(post):
 
   description = content + '<br/><br/>'
 
+  if 'linkInfo' in post:
+    linkInfo = post['linkInfo']
+
+    shareInfo = '链接分享：'
+    if 'audio' in linkInfo:
+      if linkInfo['audio'].get('subtype') == 'MUSIC':
+        shareInfo = '音乐分享：'
+      else:
+        shareInfo = '未知分享：'
+
+    if 'video' in linkInfo:
+        shareInfo = '视频分享：'
+
+    description += "%s<a href='%s' target='_blank'>%s</a><br/><br/>" % (shareInfo, linkInfo['linkUrl'], linkInfo['title'])
+
+  if 'video' in post:
+    video = post['video']
+    # 网页上没有提供视频链接，只提供一个预览图
+    description += "<img src='%s'/><br/><br/>" % video['image']['thumbnailUrl']
+
   for i, picture in enumerate(post['pictures']):
     description += '''<div style="align:left; text-align:center;">
                         <img src="%s" />
