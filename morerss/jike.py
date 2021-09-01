@@ -13,7 +13,11 @@ from . import base
 httpclient = AsyncHTTPClient()
 
 
-def post2rss(post):
+def post2rss(data_plan, post):
+  plan_key = {
+    'unlimited': 'picUrl',
+    'limited': 'thumbnailUrl',
+  }
 
   url = f"https://m.okjike.com/originalPosts/{post['id']}"
   date = datetime.datetime.strptime(post['createdAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
@@ -44,14 +48,14 @@ def post2rss(post):
 
   if 'video' in post:
     video = post['video']
-    # 网页上没有提供视频链接，只提供一个预览图
-    description += "<img src='%s'/><br/><br/>" % video['image']['thumbnailUrl']
+    # 返回 json 里没有提供视频链接，只提供一个预览图
+    description += "<img src='%s'/><br/><br/>" % video['image'][plan_key.get(data_plan)]
 
   for i, picture in enumerate(post['pictures']):
     description += '''<div style="align:left; text-align:center;">
                         <img src="%s" />
                         <div>图 %s/%s</div>
-                      </div><br/>''' % (picture.get('thumbnailUrl'), i+1, len(post['pictures']))
+                      </div><br/>''' % (picture[plan_key.get(data_plan)], i+1, len(post['pictures']))
 
   if 'topic' in post:
       topic = post['topic']
@@ -84,11 +88,15 @@ class JikeUserHandler(base.BaseHandler):
       'description': data['user']['briefIntro'],
     }
 
+    data_plan = self.get_argument('data', None)
+    if data_plan not in ('limited', 'unlimited'):
+      data_plan = 'limited'
+
     rss = base.data2rss(
       url,
       rss_info,
       data['posts'],
-      partial(post2rss),
+      partial(post2rss, data_plan),
     )
 
     xml = rss.to_xml(encoding='utf-8')
@@ -118,11 +126,15 @@ class JikeTopicHandler(base.BaseHandler):
       'description': data['topic']['briefIntro'],
     }
 
+    data_plan = self.get_argument('data', None)
+    if data_plan not in ('limited', 'unlimited'):
+      data_plan = 'limited'
+
     rss = base.data2rss(
       url,
       rss_info,
       data['posts'],
-      partial(post2rss),
+      partial(post2rss, data_plan),
     )
 
     xml = rss.to_xml(encoding='utf-8')
