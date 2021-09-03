@@ -98,3 +98,65 @@ class MattersUserArticleHandler(base.BaseHandler):
       res.rethrow()
 
     return res.body.decode('utf-8')
+
+
+class MattersTopicHandler(base.BaseHandler):
+  async def get(self, tid):
+    url = f'https://matters.news/tags/{tid}'
+    query = """
+      query {
+        node(input: { id: "%s" }) {
+          ... on Tag {
+            id
+            content
+            description
+            articles(input: { first: 10, selected: %s }) {
+              edges {
+                node {
+                  author {
+                    displayName
+                    userName
+                  }
+                  summary
+                  access{ type }
+                  slug
+                  mediaHash
+                  title
+                  content
+                  createdAt
+                }
+              }
+            }
+          }
+        }
+      }""" % (tid, 'false')
+
+    result = await self._get_url(query)
+    data = json.loads(result)['data']
+
+    rss_info = {
+      'title': '%s - Matters 标签' % data['node']['content'],
+      'description': data['node']['description'],
+    }
+
+    rss = base.data2rss(
+      url,
+      rss_info,
+      data['node']['articles']['edges'],
+      partial(article2rss),
+    )
+
+    xml = rss.to_xml(encoding='utf-8')
+    self.finish(xml)
+
+  async def _get_url(self, query):
+    res = await httpclient.fetch(endpoint, raise_error=False,
+                                 method='POST', body=json.dumps({'query':query}),
+                                 headers={'Content-Type': 'application/json'})
+
+    if res.code in [404, 429]:
+      raise web.HTTPError(res.code)
+    else:
+      res.rethrow()
+
+    return res.body.decode('utf-8')

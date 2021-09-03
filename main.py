@@ -24,6 +24,7 @@ from morerss import (
   TGChannelHandler,
   JikeUserHandler,
   JikeTopicHandler,
+  MattersTopicHandler,
   MattersUserArticleHandler,
 )
 from morerss.base import MyApp
@@ -41,6 +42,7 @@ routers = [
   (r'/tg/([^/]+)', TGChannelHandler),
   (r'/jike_user/([^/]+)', JikeUserHandler),
   (r'/jike_topic/([^/]+)', JikeTopicHandler),
+  (r'/matters_topic/([^/]+)', MattersTopicHandler),
   (r'/matters_user/([^/]+)', MattersUserArticleHandler),
 ]
 
