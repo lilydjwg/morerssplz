@@ -103,6 +103,11 @@ class MattersUserArticleHandler(base.BaseHandler):
 class MattersTopicHandler(base.BaseHandler):
   async def get(self, tid):
     url = f'https://matters.news/tags/{tid}'
+
+    article_type = self.get_argument('type', None)
+    if article_type not in ('latest', 'selected'):
+      article_type = 'latest'
+
     query = """
       query {
         node(input: { id: "%s" }) {
@@ -129,13 +134,13 @@ class MattersTopicHandler(base.BaseHandler):
             }
           }
         }
-      }""" % (tid, 'false')
+      }""" % (tid, 'false' if article_type != 'selected' else 'true')
 
     result = await self._get_url(query)
     data = json.loads(result)['data']
 
     rss_info = {
-      'title': '%s - Matters 标签' % data['node']['content'],
+      'title': '%s - %s - Matters 标签' % (data['node']['content'],'最新' if article_type != 'selected' else '精选'),
       'description': data['node']['description'],
     }
 
