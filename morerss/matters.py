@@ -65,6 +65,43 @@ class MattersAPI:
     res = await self._get_json(query)
     return res['data']['viewer']['recommendation']['feed']
 
+  async def get_articles_by_circle(self, cname):
+
+    query = """
+      query {
+        circle(input: { name: "%s" }) {
+          id
+          displayName
+          description
+          articles: works(input: { first: 5 }) {
+            edges {
+              node {
+                ...ArticleDigestFeedArticlePublic
+              }
+            }
+          }
+        }
+      }
+
+      fragment ArticleDigestFeedArticlePublic on Article {
+        id
+        title
+        slug
+        mediaHash
+        summary
+        content
+        createdAt
+        author {
+          userName
+          displayName
+        }
+        access { type }
+      }
+    """ % cname
+
+    res = await self._get_json(query)
+    return res['data']
+
   async def get_articles_by_user(self, uid):
 
     query = """
@@ -156,6 +193,29 @@ def article2rss(node):
   )
 
   return item
+
+
+class MattersCircleArticleHandler(base.BaseHandler):
+  async def get(self, cname):
+    url = f'https://matters.news/~{cname}'
+
+    data = await matters_api.get_articles_by_circle(cname)
+    circle = data['circle']
+
+    rss_info = {
+      'title': '%s - 作品 - Matters 围炉' % circle['displayName'],
+      'description': circle['description'],
+    }
+
+    rss = base.data2rss(
+      url,
+      rss_info,
+      circle['articles']['edges'],
+      partial(article2rss),
+    )
+
+    xml = rss.to_xml(encoding='utf-8')
+    self.finish(xml)
 
 
 class MattersFeedHandler(base.BaseHandler):
