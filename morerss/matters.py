@@ -18,6 +18,23 @@ class MattersAPI:
   endpoint = 'https://server.matters.news/graphql'
   user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:63.0) Gecko/20100101 Firefox/63.0'
 
+  article_fragment = """
+    fragment ArticleFeed on Article {
+      id
+      title
+      slug
+      mediaHash
+      summary
+      content
+      createdAt
+      author {
+        userName
+        displayName
+      }
+      access { type }
+    }
+  """
+
   async def _get_json(self, query):
     headers = {
       'User-Agent': self.user_agent,
@@ -43,24 +60,16 @@ class MattersAPI:
             feed: %s (input: { first: 10 }) {
               edges {
                 node {
-                  author {
-                    userName
-                    displayName
-                  }
-                  access{ type }
-                  slug
-                  mediaHash
-                  title
-                  summary
-                  content
-                  createdAt
+                  ...ArticleFeed
                 }
               }
             }
           }
         }
       }
-    """ % feed_type
+
+      %s
+    """ % (feed_type, self.article_fragment)
 
     res = await self._get_json(query)
     return res['data']['viewer']['recommendation']['feed']
@@ -76,28 +85,15 @@ class MattersAPI:
           articles: works(input: { first: 5 }) {
             edges {
               node {
-                ...ArticleDigestFeedArticlePublic
+                ...ArticleFeed
               }
             }
           }
         }
       }
 
-      fragment ArticleDigestFeedArticlePublic on Article {
-        id
-        title
-        slug
-        mediaHash
-        summary
-        content
-        createdAt
-        author {
-          userName
-          displayName
-        }
-        access { type }
-      }
-    """ % cname
+      %s
+    """ % (cname, self.article_fragment)
 
     res = await self._get_json(query)
     return res['data']
@@ -114,22 +110,15 @@ class MattersAPI:
           articles(input: { first: 20 }) {
             edges {
               node {
-                author {
-                  userName
-                  displayName
-                }
-                access{ type }
-                slug
-                mediaHash
-                title
-                summary
-                content
-                createdAt
+                ...ArticleFeed
               }
             }
           }
         }
-      }""" % uid
+      }
+
+      %s
+    """ % (uid, self.article_fragment)
 
     res = await self._get_json(query)
     return res['data']
@@ -146,23 +135,16 @@ class MattersAPI:
             articles(input: { first: 10, selected: %s }) {
               edges {
                 node {
-                  author {
-                    displayName
-                    userName
-                  }
-                  summary
-                  access{ type }
-                  slug
-                  mediaHash
-                  title
-                  content
-                  createdAt
+                  ...ArticleFeed
                 }
               }
             }
           }
         }
-      }""" % (tid, 'false' if article_type != 'selected' else 'true')
+      }
+
+      %s
+    """ % (tid, 'false' if article_type != 'selected' else 'true', self.article_fragment)
 
     res = await self._get_json(query)
     return res['data']
