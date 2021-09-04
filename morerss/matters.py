@@ -153,8 +153,8 @@ class MattersAPI:
 matters_api = MattersAPI()
 
 
-def article2rss(node):
-  article = node['node']
+def article2rss(edge):
+  article = edge['node']
 
   if article['access']['type'] == 'public':
     article_type = '公开'
