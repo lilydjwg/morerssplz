@@ -34,6 +34,37 @@ class MattersAPI:
 
     return json.loads(res.body.decode('utf-8'))
 
+  async def get_feed(self, feed_type):
+    query = """
+      query {
+        viewer {
+          id
+          recommendation {
+            feed: %s (input: { first: 10 }) {
+              edges {
+                node {
+                  author {
+                    userName
+                    displayName
+                  }
+                  access{ type }
+                  slug
+                  mediaHash
+                  title
+                  summary
+                  content
+                  createdAt
+                }
+              }
+            }
+          }
+        }
+      }
+    """ % feed_type
+
+    res = await self._get_json(query)
+    return res['data']['viewer']['recommendation']['feed']
+
   async def get_articles_by_user(self, uid):
 
     query = """
@@ -125,6 +156,38 @@ def article2rss(node):
   )
 
   return item
+
+
+class MattersFeedHandler(base.BaseHandler):
+  async def get(self):
+    url = f'https://matters.news/'
+
+    options = {
+      'hottest': '热门',
+      'newest': '最新',
+      'icymi': '精华',
+    }
+
+    feed_type = self.get_argument('type', None)
+    if feed_type not in ('hottest', 'newest', 'icymi'):
+      feed_type = 'hottest'
+
+    data = await matters_api.get_feed(feed_type)
+
+    rss_info = {
+      'title': 'Matters %s' % options[feed_type],
+      'description': '',
+    }
+
+    rss = base.data2rss(
+      url,
+      rss_info,
+      data['edges'],
+      partial(article2rss),
+    )
+
+    xml = rss.to_xml(encoding='utf-8')
+    self.finish(xml)
 
 
 class MattersUserArticleHandler(base.BaseHandler):
