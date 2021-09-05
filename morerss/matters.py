@@ -277,7 +277,7 @@ class MattersAPI:
 matters_api = MattersAPI()
 
 
-def article2rss(edge):
+def article2rssitem(edge):
   article = edge['node']
 
   if article['access']['type'] == 'public':
@@ -301,7 +301,7 @@ def article2rss(edge):
   return item
 
 
-def comment2rss(edge):
+def comment2rssitem(edge):
   comment = edge['node']
 
   author_url = f'https://matters.news/@{comment["author"]["userName"]}'
@@ -371,7 +371,7 @@ class MattersCircleBroadcastHandler(base.BaseHandler):
       url,
       rss_info,
       circle['broadcast']['edges'],
-      partial(comment2rss),
+      partial(comment2rssitem),
     )
 
     xml = rss.to_xml(encoding='utf-8')
@@ -394,7 +394,7 @@ class MattersCircleArticleHandler(base.BaseHandler):
       url,
       rss_info,
       circle['articles']['edges'],
-      partial(article2rss),
+      partial(article2rssitem),
     )
 
     xml = rss.to_xml(encoding='utf-8')
@@ -426,7 +426,7 @@ class MattersFeedHandler(base.BaseHandler):
       url,
       rss_info,
       data['edges'],
-      partial(article2rss),
+      partial(article2rssitem),
     )
 
     xml = rss.to_xml(encoding='utf-8')
@@ -452,7 +452,7 @@ class MattersUserResponseHandler(base.BaseHandler):
       rss_info,
       [edge1 for edge in data['commentedArticles']['edges']
              for edge1 in edge['node']['comments']['edges']],
-      partial(comment2rss),
+      partial(comment2rssitem),
     )
 
     xml = rss.to_xml(encoding='utf-8')
@@ -474,7 +474,7 @@ class MattersUserArticleHandler(base.BaseHandler):
       url,
       rss_info,
       data['user']['articles']['edges'],
-      partial(article2rss),
+      partial(article2rssitem),
     )
 
     xml = rss.to_xml(encoding='utf-8')
@@ -500,7 +500,7 @@ class MattersTopicHandler(base.BaseHandler):
       url,
       rss_info,
       data['node']['articles']['edges'],
-      partial(article2rss),
+      partial(article2rssitem),
     )
 
     xml = rss.to_xml(encoding='utf-8')
