@@ -58,7 +58,7 @@ def post2rss(data_plan, post):
 
   import re
   item = PyRSS2Gen.RSSItem(
-    title=re.split(',|，|\.|。|;|；|!|！|\?|？|~|<br/>', content)[0],
+    title = re.split(r'[,，\.。;；!！\?？~]|<br/>', content)[0],
     link = url,
     guid = url,
     description = description,
