@@ -149,6 +149,63 @@ class MattersAPI:
     res = await self._get_json(query)
     return res['data']
 
+  async def get_broadcast_by_circle(self, cname):
+    query = """
+      query {
+        circle(input: { name: "%s" }) {
+          id
+          displayName
+          description
+
+          broadcast(input: { first: 10 }) {
+            edges {
+              node {
+                ...ThreadCommentCommentPublic
+              }
+            }
+          }
+        }
+      }
+
+      fragment ThreadCommentCommentPublic on Comment {
+        id
+        ...FeedCommentPublic
+
+        comments(input: { sort: oldest, first: null }) {
+          edges {
+            node {
+              ...FeedCommentPublic
+            }
+          }
+        }
+      }
+
+      fragment FeedCommentPublic on Comment {
+        ...CommentDigest
+
+        replyTo { ...CommentDigest }
+
+        parentComment { id }
+
+        node { ...ArticleFeed }
+      }
+
+      fragment CommentDigest on Comment {
+        id
+        content
+        createdAt
+        author {
+          id
+          userName
+          displayName
+        }
+      }
+
+      %s
+    """ % (cname, self.article_fragment)
+    res = await self._get_json(query)
+    return res['data']
+
   async def get_comments_by_user(self, uid):
     query = """
       query {
@@ -245,22 +302,29 @@ def article2rss(edge):
 
 def comment2rss(edge):
   comment = edge['node']
-  article = comment['node']
 
   author_url = f'https://matters.news/@{comment["author"]["userName"]}'
-  article_url = f'https://matters.news/@{article["author"]["userName"]}/{article["slug"]}-{article["mediaHash"]}'
-  if comment['parentComment']:
-    comment_url = f'{article_url}#{comment["parentComment"]["id"]}-{comment["id"]}'
-  else:
-    comment_url = f'{article_url}#i{comment["id"]}'
+  comment_url = ''
 
   content = """
-    <div><a href='%s'>%s</a> 在 <a href='%s'>《%s》</a> 下的评论</div>
     <div>%s</div>
     <p>%s</p>
-  """ % (author_url, comment['author']['displayName'],
-         article_url, article['title'],
-         comment['content'], comment['createdAt'])
+  """ % (comment['content'], comment['createdAt'])
+
+  article = comment['node']
+  if article:
+    article_url = f'https://matters.news/@{article["author"]["userName"]}/{article["slug"]}-{article["mediaHash"]}'
+    article_info = """
+      <div><a href='%s'>%s</a> 在 <a href='%s'>《%s》</a> 下的评论</div>
+    """ % (author_url, comment['author']['displayName'],
+           article_url, article['title'])
+
+    content = article_info + content
+
+    if comment['parentComment']:
+      comment_url = f'{article_url}#{comment["parentComment"]["id"]}-{comment["id"]}'
+    else:
+      comment_url = f'{article_url}#{comment["id"]}'
 
   if comment['replyTo']:
     author_url = f'https://matters.news/@{comment["replyTo"]["author"]["userName"]}'
@@ -285,6 +349,29 @@ def comment2rss(edge):
   )
 
   return item
+
+
+class MattersCircleBroadcastHandler(base.BaseHandler):
+  async def get(self, cname):
+    url = f'https://matters.news/~{cname}/broadcast'
+
+    data = await matters_api.get_broadcast_by_circle(cname)
+    circle = data['circle']
+
+    rss_info = {
+      'title': '%s - 广播 - Matters 围炉' % circle['displayName'],
+      'description': circle['description'],
+    }
+
+    rss = base.data2rss(
+      url,
+      rss_info,
+      circle['broadcast']['edges'],
+      partial(comment2rss),
+    )
+
+    xml = rss.to_xml(encoding='utf-8')
+    self.finish(xml)
 
 
 class MattersCircleArticleHandler(base.BaseHandler):
