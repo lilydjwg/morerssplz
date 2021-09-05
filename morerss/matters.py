@@ -99,7 +99,7 @@ class MattersAPI:
     res = await self._get_json(query)
     return res['data']
 
-  async def get_articles_by_user(self, uid):
+  async def get_articles_by_user(self, uname):
 
     query = """
       query {
@@ -119,7 +119,7 @@ class MattersAPI:
       }
 
       %s
-    """ % (uid, self.article_fragment)
+    """ % (uname, self.article_fragment)
 
     res = await self._get_json(query)
     return res['data']
@@ -460,10 +460,10 @@ class MattersUserResponseHandler(base.BaseHandler):
 
 
 class MattersUserArticleHandler(base.BaseHandler):
-  async def get(self, uid):
-    url = f'https://matters.news/@{uid}/'
+  async def get(self, uname):
+    url = f'https://matters.news/@{uname}/'
 
-    data = await matters_api.get_articles_by_user(uid)
+    data = await matters_api.get_articles_by_user(uname)
 
     rss_info = {
       'title': '%s - Matters 用户文章' % data['user']['displayName'],
