@@ -340,7 +340,8 @@ def comment2rss(edge):
 
   import re
   item = PyRSS2Gen.RSSItem(
-    title=re.split(',|，|\.|。|;|；|!|！|\?|？|~', comment['content'])[0].replace('<p>', ''),
+    title=re.split(',|，|\.|。|;|；|!|！|\?|？|~|\n|<br>|<br/>|<br />',
+                   comment['content'])[0].replace('<p>', '').replace('</p>', ''),
     link=comment_url,
     guid=comment_url,
     description=content,
