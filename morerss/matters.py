@@ -2,6 +2,7 @@ import json
 import datetime
 import PyRSS2Gen
 
+from datetime import datetime
 from functools import partial
 from lxml.html import fromstring, tostring
 from tornado import web
@@ -309,7 +310,8 @@ def comment2rss(edge):
   content = """
     <div>%s</div>
     <p>%s</p>
-  """ % (comment['content'], comment['createdAt'])
+  """ % (comment['content'],
+         datetime.strptime(comment['createdAt'], '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%d-%m %H:%M:%S'))
 
   article = comment['node']
   if article:
@@ -335,7 +337,8 @@ def comment2rss(edge):
         <p>%s</p>
       </blockquote>
     """ % (author_url, comment['replyTo']['author']['displayName'],
-           comment['replyTo']['content'], comment['replyTo']['createdAt'])
+           comment['replyTo']['content'],
+           datetime.strptime(comment['replyTo']['createdAt'], '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%d-%m %H:%M:%S'))
     content += reply_to_content
 
   import re
