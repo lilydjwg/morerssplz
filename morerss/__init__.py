@@ -11,6 +11,7 @@ from .matters import MattersCircleArticleHandler
 from .matters import MattersFeedHandler
 from .matters import MattersTopicHandler
 from .matters import MattersUserArticleHandler
+from .matters import MattersUserResponseHandler
 from .zhihu import ZhihuZhuanlanHandler
 from .zhihu_stream import ZhihuStream
 from .zhihu_stream import ZhihuTopic

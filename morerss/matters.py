@@ -149,6 +149,72 @@ class MattersAPI:
     res = await self._get_json(query)
     return res['data']
 
+  async def get_comments_by_user(self, uid):
+    query = """
+      query {
+        node(input: { id: "%s" }) {
+          ... on User {
+            commentedArticles(input: { first: 5 }) {
+              edges {
+                node {
+                  comments(input: { filter: { author: "%s" }, first: null }) {
+                    edges {
+                      node {
+                        ...FeedCommentPublic
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      fragment FeedCommentPublic on Comment {
+        ...CommentDigest
+
+        replyTo { ...CommentDigest }
+
+        parentComment { id }
+
+        node { ...ArticleFeed }
+      }
+
+      fragment CommentDigest on Comment {
+        id
+        content
+        createdAt
+        author {
+          id
+          userName
+          displayName
+        }
+      }
+
+      %s
+    """ % (uid, uid, self.article_fragment)
+
+    res = await self._get_json(query)
+    return res['data']['node']
+
+  async def get_user_by_name(self, uname):
+    query = """
+      query {
+        user(input: { userName: "%s" }) {
+          id
+          userName
+          displayName
+          info {
+            description
+          }
+        }
+      }
+    """ % uname
+
+    res = await self._get_json(query)
+    return res['data']
+
 
 matters_api = MattersAPI()
 
@@ -172,6 +238,50 @@ def article2rss(edge):
     description=article['summary'] + '<br/>'*2 + article['content'],
     author=article['author']['displayName'],
     pubDate=article['createdAt'],
+  )
+
+  return item
+
+
+def comment2rss(edge):
+  comment = edge['node']
+  article = comment['node']
+
+  author_url = f'https://matters.news/@{comment["author"]["userName"]}'
+  article_url = f'https://matters.news/@{article["author"]["userName"]}/{article["slug"]}-{article["mediaHash"]}'
+  if comment['parentComment']:
+    comment_url = f'{article_url}#{comment["parentComment"]["id"]}-{comment["id"]}'
+  else:
+    comment_url = f'{article_url}#i{comment["id"]}'
+
+  content = """
+    <div><a href='%s'>%s</a> 在 <a href='%s'>《%s》</a> 下的评论</div>
+    <div>%s</div>
+    <p>%s</p>
+  """ % (author_url, comment['author']['displayName'],
+         article_url, article['title'],
+         comment['content'], comment['createdAt'])
+
+  if comment['replyTo']:
+    author_url = f'https://matters.news/@{comment["replyTo"]["author"]["userName"]}'
+    reply_to_content = """
+      <blockquote>
+        <p>回复： <a href='%s'>%s</a></p>
+        <div>%s</div>
+        <p>%s</p>
+      </blockquote>
+    """ % (author_url, comment['replyTo']['author']['displayName'],
+           comment['replyTo']['content'], comment['replyTo']['createdAt'])
+    content += reply_to_content
+
+  import re
+  item = PyRSS2Gen.RSSItem(
+    title=re.split(',|，|\.|。|;|；|!|！|\?|？|~', comment['content'])[0].replace('<p>', ''),
+    link=comment_url,
+    guid=comment_url,
+    description=content,
+    author=comment['author']['displayName'],
+    pubDate=comment['createdAt'],
   )
 
   return item
@@ -226,6 +336,32 @@ class MattersFeedHandler(base.BaseHandler):
       rss_info,
       data['edges'],
       partial(article2rss),
+    )
+
+    xml = rss.to_xml(encoding='utf-8')
+    self.finish(xml)
+
+
+class MattersUserResponseHandler(base.BaseHandler):
+  async def get(self, uname):
+    url = f'https://matters.news/@{uname}/comments/'
+
+    data = await matters_api.get_user_by_name(uname)
+    user = data['user']
+
+    data = await matters_api.get_comments_by_user(user['id'])
+
+    rss_info = {
+      'title': '%s - Matters 用户回复' % user['displayName'],
+      'description': user['info']['description'],
+    }
+
+    rss = base.data2rss(
+      url,
+      rss_info,
+      [edge1 for edge in data['commentedArticles']['edges']
+             for edge1 in edge['node']['comments']['edges']],
+      partial(comment2rss),
     )
 
     xml = rss.to_xml(encoding='utf-8')
