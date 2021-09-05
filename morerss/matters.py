@@ -36,6 +36,31 @@ class MattersAPI:
     }
   """
 
+  comment_fragment = """
+    fragment CommentFeed on Comment {
+      id
+      content
+      createdAt
+      author {
+        id
+        userName
+        displayName
+      }
+    }
+  """
+
+  nested_comment_fragment = """
+    fragment NestedCommentFeed on Comment {
+      ...CommentFeed
+
+      replyTo { ...CommentFeed }
+
+      parentComment { id }
+
+      node { ...ArticleFeed }
+    }
+  """
+
   async def _get_json(self, query):
     headers = {
       'User-Agent': self.user_agent,
@@ -170,40 +195,24 @@ class MattersAPI:
 
       fragment ThreadCommentCommentPublic on Comment {
         id
-        ...FeedCommentPublic
+        ...NestedCommentFeed
 
         comments(input: { sort: oldest, first: null }) {
           edges {
             node {
-              ...FeedCommentPublic
+              ...NestedCommentFeed
             }
           }
         }
       }
 
-      fragment FeedCommentPublic on Comment {
-        ...CommentDigest
-
-        replyTo { ...CommentDigest }
-
-        parentComment { id }
-
-        node { ...ArticleFeed }
-      }
-
-      fragment CommentDigest on Comment {
-        id
-        content
-        createdAt
-        author {
-          id
-          userName
-          displayName
-        }
-      }
+      %s
 
       %s
-    """ % (cname, self.article_fragment)
+
+      %s
+    """ % (cname, self.nested_comment_fragment,
+           self.comment_fragment, self.article_fragment)
     res = await self._get_json(query)
     return res['data']
 
@@ -218,7 +227,7 @@ class MattersAPI:
                   comments(input: { filter: { author: "%s" }, first: null }) {
                     edges {
                       node {
-                        ...FeedCommentPublic
+                        ...NestedCommentFeed
                       }
                     }
                   }
@@ -229,29 +238,13 @@ class MattersAPI:
         }
       }
 
-      fragment FeedCommentPublic on Comment {
-        ...CommentDigest
-
-        replyTo { ...CommentDigest }
-
-        parentComment { id }
-
-        node { ...ArticleFeed }
-      }
-
-      fragment CommentDigest on Comment {
-        id
-        content
-        createdAt
-        author {
-          id
-          userName
-          displayName
-        }
-      }
+      %s
 
       %s
-    """ % (uid, uid, self.article_fragment)
+
+      %s
+    """ % (uid, uid, self.nested_comment_fragment,
+           self.comment_fragment, self.article_fragment)
 
     res = await self._get_json(query)
     return res['data']['node']
