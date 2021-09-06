@@ -22,12 +22,7 @@ def post2rss(data_plan, post):
   url = f"https://m.okjike.com/originalPosts/{post['id']}"
   date = datetime.datetime.strptime(post['createdAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
   author = post['user']['screenName']
-  content = post['content']
-
-  if len(content) > 30:
-    title = content[:30]
-  else:
-    title = content
+  content = post['content'].replace('\n', '<br/>')
 
   description = content + '<br/><br/>'
 
@@ -61,8 +56,9 @@ def post2rss(data_plan, post):
       topic = post['topic']
       description += "来自圈子：<a href='https://m.okjike.com/topics/%s' target='_blank'>%s</a>" % (topic['id'], topic['content'])
 
+  import re
   item = PyRSS2Gen.RSSItem(
-    title = title,
+    title = re.split(r'[,，\.。;；!！\?？~]|<br/>', content)[0],
     link = url,
     guid = url,
     description = description,
