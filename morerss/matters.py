@@ -33,6 +33,7 @@ class MattersAPI:
         displayName
       }
       access { type }
+      __typename
     }
   """
 
@@ -46,6 +47,7 @@ class MattersAPI:
         userName
         displayName
       }
+      __typename
     }
   """
 
@@ -270,13 +272,34 @@ class MattersAPI:
 matters_api = MattersAPI()
 
 
+def edge2rssitem(edge):
+  item = None
+  typename = edge['node']['__typename'].lower()
+
+  if typename == 'article':
+    item = article2rssitem(edge)
+  elif typename == 'comment':
+    item = comment2rssitem(edge)
+  else:
+    item = PyRSS2Gen.RSSItem(
+      title=f'未支持的类型：{typename}',
+      link='',
+      guid='',
+      description=f'未支持的类型：{typename}',
+      author='',
+      pubDate=datetime.now(),
+    )
+
+  return item
+
+
 def article2rssitem(edge):
   article = edge['node']
 
   if article['access']['type'] == 'public':
-    article_type = '公开'
+    article_type = '公开作品'
   elif article['access']['type'] == 'paywall':
-    article_type = '付费'
+    article_type = '付费作品'
   else:
     article_type = '未知'
 
@@ -335,9 +358,10 @@ def comment2rssitem(edge):
     content += reply_to_content
 
   import re
+  title = re.sub('<p>|</p>', '',
+                 re.split(r'[,，\.。;；!！\?？~]|<br/>', comment['content'])[0])
   item = PyRSS2Gen.RSSItem(
-    title=re.split(',|，|\.|。|;|；|!|！|\?|？|~|\n|<br>|<br/>|<br />',
-                   comment['content'])[0].replace('<p>', '').replace('</p>', ''),
+    title=f'[评论] {title}',
     link=comment_url,
     guid=comment_url,
     description=content,
@@ -426,48 +450,44 @@ class MattersFeedHandler(base.BaseHandler):
     self.finish(xml)
 
 
-class MattersUserResponseHandler(base.BaseHandler):
+class MattersUserHandler(base.BaseHandler):
   async def get(self, uname):
-    url = f'https://matters.news/@{uname}/comments/'
+    url = f'https://matters.news/@{uname}'
 
-    data = await matters_api.get_user_by_name(uname)
-    user = data['user']
+    is_article = self.get_argument('article', '1')
+    is_response = self.get_argument('response', '1')
 
-    data = await matters_api.get_comments_by_user(user['id'])
+    user = None
+    edges = []
+    if is_article == '1':
+      data = await matters_api.get_articles_by_user(uname)
+      user = data['user']
+      edges.extend(data['user']['articles']['edges'])
 
-    rss_info = {
-      'title': '%s - Matters 用户回复' % user['displayName'],
-      'description': user['info']['description'],
-    }
+    if is_response == '1':
+      data = await matters_api.get_user_by_name(uname)
+      user = data['user']
+
+      data = await matters_api.get_comments_by_user(user['id'])
+      edges.extend([edge1 for edge in data['commentedArticles']['edges']
+                          for edge1 in edge['node']['comments']['edges']])
+
+    if user:
+      rss_info = {
+        'title': '%s - Matters 用户' % user['displayName'],
+        'description': user['info']['description'],
+      }
+    else:
+      rss_info = {
+        'title': '请选择至少一种订阅类别',
+        'description': '',
+      }
 
     rss = base.data2rss(
       url,
       rss_info,
-      [edge1 for edge in data['commentedArticles']['edges']
-             for edge1 in edge['node']['comments']['edges']],
-      partial(comment2rssitem),
-    )
-
-    xml = rss.to_xml(encoding='utf-8')
-    self.finish(xml)
-
-
-class MattersUserArticleHandler(base.BaseHandler):
-  async def get(self, uname):
-    url = f'https://matters.news/@{uname}/'
-
-    data = await matters_api.get_articles_by_user(uname)
-
-    rss_info = {
-      'title': '%s - Matters 用户文章' % data['user']['displayName'],
-      'description': data['user']['info']['description'],
-    }
-
-    rss = base.data2rss(
-      url,
-      rss_info,
-      data['user']['articles']['edges'],
-      partial(article2rssitem),
+      edges,
+      partial(edge2rssitem),
     )
 
     xml = rss.to_xml(encoding='utf-8')

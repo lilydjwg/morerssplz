@@ -28,8 +28,7 @@ from morerss import (
   MattersCircleBroadcastHandler,
   MattersFeedHandler,
   MattersTopicHandler,
-  MattersUserArticleHandler,
-  MattersUserResponseHandler,
+  MattersUserHandler,
 )
 from morerss.base import MyApp
 
@@ -50,8 +49,7 @@ routers = [
   (r'/matters_circle/broadcast/([^/]+)', MattersCircleBroadcastHandler),
   (r'/matters/feed', MattersFeedHandler),
   (r'/matters_topic/([^/]+)', MattersTopicHandler),
-  (r'/matters_user/articles/([^/]+)', MattersUserArticleHandler),
-  (r'/matters_user/comments/([^/]+)', MattersUserResponseHandler),
+  (r'/matters/user/([^/]+)', MattersUserHandler),
 ]
 
 def main():
