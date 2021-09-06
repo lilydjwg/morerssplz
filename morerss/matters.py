@@ -216,6 +216,10 @@ class MattersAPI:
     """ % (cname, self.nested_comment_fragment,
            self.comment_fragment, self.article_fragment)
     res = await self._get_json(query)
+
+    for edge in res['data']['circle']['broadcast']['edges']:
+      edge['node']['__typename'] = 'Broadcast'
+
     return res['data']
 
   async def get_comments_by_user(self, uid):
@@ -278,7 +282,7 @@ def edge2rssitem(edge):
 
   if typename == 'article':
     item = article2rssitem(edge)
-  elif typename == 'comment':
+  elif typename == 'comment' or typename == 'broadcast':
     item = comment2rssitem(edge)
   else:
     item = PyRSS2Gen.RSSItem(
@@ -357,11 +361,17 @@ def comment2rssitem(edge):
            datetime.strptime(comment['replyTo']['createdAt'], '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%d-%m %H:%M:%S'))
     content += reply_to_content
 
+  comment_type = comment['__typename']
+  if comment['__typename'].lower() == 'comment':
+    comment_type = '评论'
+  elif comment['__typename'].lower() == 'broadcast':
+    comment_type = '广播'
+
   import re
   title = re.sub('<p>|</p>', '',
                  re.split(r'[,，\.。;；!！\?？~]|<br/>', comment['content'])[0])
   item = PyRSS2Gen.RSSItem(
-    title=f'[评论] {title}',
+    title=f'[{comment_type}] {title}',
     link=comment_url,
     guid=comment_url,
     description=content,
