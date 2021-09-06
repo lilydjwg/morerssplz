@@ -7,8 +7,7 @@ except ImportError:
 
 from .jike import JikeUserHandler
 from .jike import JikeTopicHandler
-from .matters import MattersCircleArticleHandler
-from .matters import MattersCircleBroadcastHandler
+from .matters import MattersCircleHandler
 from .matters import MattersFeedHandler
 from .matters import MattersTopicHandler
 from .matters import MattersUserHandler

@@ -372,46 +372,42 @@ def comment2rssitem(edge):
   return item
 
 
-class MattersCircleBroadcastHandler(base.BaseHandler):
-  async def get(self, cname):
-    url = f'https://matters.news/~{cname}/broadcast'
-
-    data = await matters_api.get_broadcast_by_circle(cname)
-    circle = data['circle']
-
-    rss_info = {
-      'title': '%s - 广播 - Matters 围炉' % circle['displayName'],
-      'description': circle['description'],
-    }
-
-    rss = base.data2rss(
-      url,
-      rss_info,
-      circle['broadcast']['edges'],
-      partial(comment2rssitem),
-    )
-
-    xml = rss.to_xml(encoding='utf-8')
-    self.finish(xml)
-
-
-class MattersCircleArticleHandler(base.BaseHandler):
+class MattersCircleHandler(base.BaseHandler):
   async def get(self, cname):
     url = f'https://matters.news/~{cname}'
 
-    data = await matters_api.get_articles_by_circle(cname)
-    circle = data['circle']
+    is_article = self.get_argument('article', '1')
+    is_broadcast = self.get_argument('broadcast', '1')
 
-    rss_info = {
-      'title': '%s - 作品 - Matters 围炉' % circle['displayName'],
-      'description': circle['description'],
-    }
+    circle = None
+    edges = []
+
+    if is_article == '1':
+      data = await matters_api.get_articles_by_circle(cname)
+      circle = data['circle']
+      edges.extend(circle['articles']['edges'])
+
+    if is_broadcast == '1':
+      data = await matters_api.get_broadcast_by_circle(cname)
+      circle = data['circle']
+      edges.extend(circle['broadcast']['edges'])
+
+    if circle:
+      rss_info = {
+        'title': '%s - Matters 围炉' % circle['displayName'],
+        'description': circle['description'],
+      }
+    else:
+      rss_info = {
+        'title': '请选择至少一种订阅类别',
+        'description': '',
+      }
 
     rss = base.data2rss(
       url,
       rss_info,
-      circle['articles']['edges'],
-      partial(article2rssitem),
+      edges,
+      partial(edge2rssitem),
     )
 
     xml = rss.to_xml(encoding='utf-8')
