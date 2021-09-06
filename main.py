@@ -46,7 +46,7 @@ routers = [
   (r'/jike_topic/([^/]+)', JikeTopicHandler),
   (r'/matters/circle/([^/]+)', MattersCircleHandler),
   (r'/matters/feed', MattersFeedHandler),
-  (r'/matters_topic/([^/]+)', MattersTopicHandler),
+  (r'/matters/topic/([^/]+)', MattersTopicHandler),
   (r'/matters/user/([^/]+)', MattersUserHandler),
 ]
 
