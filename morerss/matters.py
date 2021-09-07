@@ -1,14 +1,11 @@
 import json
-import datetime
-import PyRSS2Gen
-
 from datetime import datetime
 from functools import partial
-from lxml.html import fromstring, tostring
+
+import PyRSS2Gen
 from tornado import web
 from tornado.httpclient import AsyncHTTPClient
 
-from .base import BaseHandler
 from . import base
 
 
@@ -313,7 +310,7 @@ def article2rssitem(edge):
     title=f"[{article_type}] {article['title']}",
     link=url,
     guid=url,
-    description=article['summary'] + '<br/>'*2 + article['content'],
+    description=article['summary'] + '<br/>'*2 + article['content'].replace('\x1d', ''),
     author=article['author']['displayName'],
     pubDate=article['createdAt'],
   )
@@ -426,7 +423,7 @@ class MattersCircleHandler(base.BaseHandler):
 
 class MattersFeedHandler(base.BaseHandler):
   async def get(self):
-    url = f'https://matters.news/'
+    url = 'https://matters.news/'
 
     options = {
       'hottest': '热门',

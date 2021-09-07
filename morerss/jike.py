@@ -3,11 +3,10 @@ import datetime
 import PyRSS2Gen
 
 from functools import partial
-from lxml.html import fromstring, tostring
+from lxml.html import fromstring
 from tornado import web
 from tornado.httpclient import AsyncHTTPClient
 
-from .base import BaseHandler
 from . import base
 
 httpclient = AsyncHTTPClient()
