@@ -110,9 +110,23 @@
 <p>将即刻圈子主页 URL 里的圈子 id 写到 <code>https://rss.lilydjwg.me/jike_topic/</code> 之后即可。</p>
 <p>参数 data: 可选，(limited, unlimited) 二选一，limited 为图片缩略图，unlimited 为图片原图，默认为图片缩略图。例：<a href="https://rss.lilydjwg.me/jike_topic/5afbde1cb84c85001797d869?data=unlimited">https://rss.lilydjwg.me/jike_topic/5afbde1cb84c85001797d869?data=unlimited</a></p>
 
-<h2>即刻用户动态</h2>
-<p>将即刻用户主页 URL 里的用户 id 写到 <code>https://rss.lilydjwg.me/jike_user/</code> 之后即可。</p>
-<p>参数 data：同上。</p>
+<h2>Matters 主页动态</h2>
+<p>直接订阅 <code>https://rss.lilydjwg.me/matters/feed</code> 即可。</p>
+<p>参数 type：可选，(hottest, newest, icymi) 三选一，hottest 为最热内容，newest 为最新内容，icymi 为精华内容，默认为最热内容。例：<a href="https://rss.lilydjwg.me/matters/feed?type=hottest">https://rss.lilydjwg.me/matters/feed?type=hottest</a>。</p>
+
+<h2>Matter 用户动态</h2>
+<p>将 Matters 用户主页 URL 里的用户 id 写到 <code>https://rss.lilydjwg.me/matters/user/</code> 之后即可，注意不需要用户 id 前的 @。</p>
+<p>参数 article: 可选，(0, 1) 二选一，0 表示不订阅作者作品，1 表示订阅，默认为订阅。例：<a href="https://rss.lilydjwg.me/matters/user/sachanshih?article=0">https://rss.lilydjwg.me/matters/user/sachanshih?article=0</a></p>
+<p>参数 response 可选，(0, 1) 二选一，0 表示不订阅作者回复，1 表示订阅，默认为订阅。例：<a href="https://rss.lilydjwg.me/matters/user/sachanshih?response=0">https://rss.lilydjwg.me/matters/user/sachanshih?response=0</a>。</p>
+
+<h2>Matter 围炉动态</h2>
+<p>将 Matters 围炉主页 URL 里的围炉 id 写到 <code>https://rss.lilydjwg.me/matters/circle/</code> 之后即可，注意不需要围炉 id 前的 ~。</p>
+<p>参数 article: 可选，(0, 1) 二选一，0 表示不订阅围炉作品，1 表示订阅，默认为订阅。例：<a href="https://rss.lilydjwg.me/matters/circle/apostle_melody?article=0">https://rss.lilydjwg.me/matters/circle/apostle_melody?article=0</a></p>
+<p>参数 broadcast 可选，(0, 1) 二选一，0 表示不订阅围炉广播，1 表示订阅，默认为订阅。例：<a href="https://rss.lilydjwg.me/matters/circle/apostle_melody?broadcast=0">https://rss.lilydjwg.me/matters/circle/apostle_melody?broadcast=0</a>。</p>
+
+<h2>Matter 标签动态</h2>
+<p>将 Matters 标签主页 URL 里的标签 id 写到 <code>https://rss.lilydjwg.me/matters/topic/</code> 之后即可。</p>
+<p>参数 type：可选，(latest, selected) 二选一，latest 为最新内容，selected 为精选内容，默认为最新内容，注意有的标签下面没有精选内容。例：<a href="https://rss.lilydjwg.me/matters/topic/VGFnOjk3MTQ?type=selected">https://rss.lilydjwg.me/matters/topic/VGFnOjk3MTQ?type=selected</a>。</p>
 
 <hr/>
 <footer>

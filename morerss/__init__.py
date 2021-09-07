@@ -7,6 +7,10 @@ except ImportError:
 
 from .jike import JikeUserHandler
 from .jike import JikeTopicHandler
+from .matters import MattersCircleHandler
+from .matters import MattersFeedHandler
+from .matters import MattersTopicHandler
+from .matters import MattersUserHandler
 from .zhihu import ZhihuZhuanlanHandler
 from .zhihu_stream import ZhihuStream
 from .zhihu_stream import ZhihuTopic
