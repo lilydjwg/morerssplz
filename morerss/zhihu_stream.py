@@ -77,6 +77,7 @@ class ZhihuAPI:
     elif sort == 'newest':
       url = 'topics/%s/feeds/timeline_activity' % id
     query = {
+      'include': 'data[?*].target.content',
       'desktop': 'True',
       'limit': '7',
     }
