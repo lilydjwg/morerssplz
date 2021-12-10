@@ -508,6 +508,7 @@ async def topic2rss(id, sort='hot', pic=None):
       break
     next_url = paging['next']
     next_url = next_url.replace('https://www.zhihu.com/topics/', 'https://www.zhihu.com/api/v4/topics/')
+    next_url = next_url.replace('timeline_activity_no_video', 'timeline_activity')
     data = await zhihu_api.get_json(next_url)
     posts.extend(
       x['target'] for x in data['data']
