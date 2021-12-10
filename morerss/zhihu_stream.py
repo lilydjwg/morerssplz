@@ -27,7 +27,6 @@ class ZhihuAPI:
     :param name (str): Zhihu user ID e.g., lilydjwg
     :return (dict): deserialized user data
     """
-    baseurl = 'https://www.zhihu.com/api/v3/'
     url = 'moments/%s/activities' % name
     query = {
       'desktop': 'True',
@@ -508,6 +507,7 @@ async def topic2rss(id, sort='hot', pic=None):
     if paging['is_end']:
       break
     next_url = paging['next']
+    next_url = next_url.replace('https://www.zhihu.com/topics/', 'https://www.zhihu.com/api/v4/topics/')
     data = await zhihu_api.get_json(next_url)
     posts.extend(
       x['target'] for x in data['data']
