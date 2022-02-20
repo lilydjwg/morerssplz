@@ -85,7 +85,7 @@ class ZhihuAPI:
     return data
 
   async def answers(self, id, sort='created'):
-    url = 'questions/%s/answers?sort_by=%s&include=content' % (id, sort)
+    url = 'https://api.zhihu.com/questions/%s/answers?sort_by=%s&include=content' % (id, sort)
     query = {
       'desktop': 'True',
       'after_id': str(int(time.time())),
@@ -194,7 +194,7 @@ class ZhihuAPI:
     :param id (str): Zhihu question id
     :return (dict): dict containing the question's title and URL
     """
-    url = 'questions/%s?include=detail' % id
+    url = 'https://api.zhihu.com/questions/%s?include=detail' % id
     data = await self.get_json(url)
 
     return {
