@@ -58,8 +58,7 @@ def message_proc(message):
   del text.attrib['class']
   content = tostring(text, encoding=str).strip().replace('\r', '')
 
-  reply = message.xpath('.//a[@class="tgme_widget_message_reply"]')
-  if reply:
+  if reply := message.xpath('.//a[@class="tgme_widget_message_reply"]'):
     reply = reply[0]
     reply.tag = 'div'
     reply[0].tag = 'a'
@@ -67,8 +66,8 @@ def message_proc(message):
     del reply.attrib['href']
     content = "<blockquote>%s</blockquote>" % tostring(reply, encoding=str).strip().replace('\r', '') + content
 
-  linkpreview = message.xpath('.//a[@class="tgme_widget_message_link_preview"]')
-  if linkpreview:
+  if linkpreview := message.xpath(
+      './/a[@class="tgme_widget_message_link_preview"]'):
     linkpreview = linkpreview[0]
     linkpreview.tag = 'div'
 
@@ -83,8 +82,7 @@ def message_proc(message):
     previewtitle.tag = 'a'
     previewtitle.set('href', linkpreview.get('href'))
     del linkpreview.attrib['href']
-    image = linkpreview.xpath('.//i[@class="link_preview_right_image"]')
-    if image:
+    if image := linkpreview.xpath('.//i[@class="link_preview_right_image"]'):
       image = image[0]
       image.tag = 'img'
       image.set('src', image.attrib.pop('style').split("'")[1])
@@ -92,12 +90,8 @@ def message_proc(message):
     content += "<blockquote>%s</blockquote>" % tostring(linkpreview, encoding=str).strip().replace('\r', '')
 
   content_text = text.text_content()
-  if len(content_text) > 30:
-    title = "%s……" % (content_text[:30])
-  else:
-    title = content_text
-
-  item = PyRSS2Gen.RSSItem(
+  title = f"{content_text[:30]}……" if len(content_text) > 30 else content_text
+  return PyRSS2Gen.RSSItem(
     title = title,
     link = url,
     guid = url,
@@ -105,4 +99,3 @@ def message_proc(message):
     author = author,
     pubDate = date,
   )
-  return item

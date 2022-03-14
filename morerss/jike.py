@@ -23,18 +23,14 @@ def post2rss(data_plan, post):
   author = post['user']['screenName']
   content = post['content'].replace('\n', '<br/>')
 
-  description = content + '<br/><br/>'
+  description = f'{content}<br/><br/>'
 
   if 'linkInfo' in post:
     linkInfo = post['linkInfo']
 
     shareInfo = '链接分享：'
     if 'audio' in linkInfo:
-      if linkInfo['audio'].get('subtype') == 'MUSIC':
-        shareInfo = '音乐分享：'
-      else:
-        shareInfo = '未知分享：'
-
+      shareInfo = '音乐分享：' if linkInfo['audio'].get('subtype') == 'MUSIC' else '未知分享：'
     if 'video' in linkInfo:
         shareInfo = '视频分享：'
 
@@ -56,7 +52,7 @@ def post2rss(data_plan, post):
       description += "来自圈子：<a href='https://m.okjike.com/topics/%s' target='_blank'>%s</a>" % (topic['id'], topic['content'])
 
   import re
-  item = PyRSS2Gen.RSSItem(
+  return PyRSS2Gen.RSSItem(
     title = re.split(r'[,，\.。;；!！\?？~]|<br/>', content)[0],
     link = url,
     guid = url,
@@ -64,8 +60,6 @@ def post2rss(data_plan, post):
     author = author,
     pubDate = date,
   )
-
-  return item
 
 
 class JikeUserHandler(base.BaseHandler):
@@ -79,8 +73,8 @@ class JikeUserHandler(base.BaseHandler):
     data = json.loads(doc.xpath('//script[@type="application/json"]')[0].text_content())['props']['pageProps']
 
     rss_info = {
-      'title': '%s - 即刻用户' % data['user']['screenName'],
-      'description': data['user']['briefIntro'],
+        'title': f"{data['user']['screenName']} - 即刻用户",
+        'description': data['user']['briefIntro'],
     }
 
     data_plan = self.get_argument('data', None)
@@ -117,8 +111,8 @@ class JikeTopicHandler(base.BaseHandler):
     data = json.loads(doc.xpath('//script[@type="application/json"]')[0].text_content())['props']['pageProps']
 
     rss_info = {
-      'title': '%s - 即刻圈子' % data['topic']['content'],
-      'description': data['topic']['briefIntro'],
+        'title': f"{data['topic']['content']} - 即刻圈子",
+        'description': data['topic']['briefIntro'],
     }
 
     data_plan = self.get_argument('data', None)

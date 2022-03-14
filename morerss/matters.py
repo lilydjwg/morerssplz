@@ -278,11 +278,11 @@ def edge2rssitem(edge):
   typename = edge['node']['__typename'].lower()
 
   if typename == 'article':
-    item = article2rssitem(edge)
-  elif typename == 'comment' or typename == 'broadcast':
-    item = comment2rssitem(edge)
+    return article2rssitem(edge)
+  elif typename in ['comment', 'broadcast']:
+    return comment2rssitem(edge)
   else:
-    item = PyRSS2Gen.RSSItem(
+    return PyRSS2Gen.RSSItem(
       title=f'未支持的类型：{typename}',
       link='',
       guid='',
@@ -290,8 +290,6 @@ def edge2rssitem(edge):
       author='',
       pubDate=datetime.now(),
     )
-
-  return item
 
 
 def article2rssitem(edge):
@@ -306,16 +304,15 @@ def article2rssitem(edge):
 
   url = f'https://matters.news/@{article["author"]["userName"]}/{article["slug"]}-{article["mediaHash"]}'
 
-  item = PyRSS2Gen.RSSItem(
-    title=f"[{article_type}] {article['title']}",
-    link=url,
-    guid=url,
-    description=article['summary'] + '<br/>'*2 + article['content'].replace('\x1d', ''),
-    author=article['author']['displayName'],
-    pubDate=article['createdAt'],
+  return PyRSS2Gen.RSSItem(
+      title=f"[{article_type}] {article['title']}",
+      link=url,
+      guid=url,
+      description=article['summary'] + '<br/>' * 2 +
+      article['content'].replace('\x1d', ''),
+      author=article['author']['displayName'],
+      pubDate=article['createdAt'],
   )
-
-  return item
 
 
 def comment2rssitem(edge):
@@ -330,8 +327,7 @@ def comment2rssitem(edge):
   """ % (comment['content'],
          datetime.strptime(comment['createdAt'], '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%d-%m %H:%M:%S'))
 
-  article = comment['node']
-  if article:
+  if article := comment['node']:
     article_url = f'https://matters.news/@{article["author"]["userName"]}/{article["slug"]}-{article["mediaHash"]}'
     article_info = """
       <div><a href='%s'>%s</a> 在 <a href='%s'>《%s》</a> 下的评论</div>
@@ -359,15 +355,15 @@ def comment2rssitem(edge):
     content += reply_to_content
 
   comment_type = comment['__typename']
-  if comment['__typename'].lower() == 'comment':
+  if comment_type.lower() == 'comment':
     comment_type = '评论'
-  elif comment['__typename'].lower() == 'broadcast':
+  elif comment_type.lower() == 'broadcast':
     comment_type = '广播'
 
   import re
   title = re.sub('<p>|</p>', '',
                  re.split(r'[,，\.。;；!！\?？~]|<br/>', comment['content'])[0])
-  item = PyRSS2Gen.RSSItem(
+  return PyRSS2Gen.RSSItem(
     title=f'[{comment_type}] {title}',
     link=comment_url,
     guid=comment_url,
@@ -375,8 +371,6 @@ def comment2rssitem(edge):
     author=comment['author']['displayName'],
     pubDate=comment['createdAt'],
   )
-
-  return item
 
 
 class MattersCircleHandler(base.BaseHandler):
@@ -401,8 +395,8 @@ class MattersCircleHandler(base.BaseHandler):
 
     if circle:
       rss_info = {
-        'title': '%s - Matters 围炉' % circle['displayName'],
-        'description': circle['description'],
+          'title': f"{circle['displayName']} - Matters 围炉",
+          'description': circle['description'],
       }
     else:
       rss_info = {
@@ -437,10 +431,7 @@ class MattersFeedHandler(base.BaseHandler):
 
     data = await matters_api.get_feed(feed_type)
 
-    rss_info = {
-      'title': 'Matters %s' % options[feed_type],
-      'description': '',
-    }
+    rss_info = {'title': f'Matters {options[feed_type]}', 'description': ''}
 
     rss = base.data2rss(
       url,
@@ -465,8 +456,7 @@ class MattersUserHandler(base.BaseHandler):
     if is_article == '1':
       data = await matters_api.get_articles_by_user(uname)
       user = data['user']
-      edges.extend(data['user']['articles']['edges'])
-
+      edges.extend(user['articles']['edges'])
     if is_response == '1':
       data = await matters_api.get_user_by_name(uname)
       user = data['user']
@@ -477,8 +467,8 @@ class MattersUserHandler(base.BaseHandler):
 
     if user:
       rss_info = {
-        'title': '%s - Matters 用户' % user['displayName'],
-        'description': user['info']['description'],
+          'title': f"{user['displayName']} - Matters 用户",
+          'description': user['info']['description'],
       }
     else:
       rss_info = {
@@ -508,8 +498,9 @@ class MattersTopicHandler(base.BaseHandler):
     data = await matters_api.get_articles_by_topic(tid, article_type)
 
     rss_info = {
-      'title': '%s - %s - Matters 标签' % (data['node']['content'],'最新' if article_type != 'selected' else '精选'),
-      'description': data['node']['description'],
+        'title':
+        f"{data['node']['content']} - {'最新' if article_type != 'selected' else '精选'} - Matters 标签",
+        'description': data['node']['description'],
     }
 
     rss = base.data2rss(

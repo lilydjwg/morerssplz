@@ -86,7 +86,7 @@ class ZhihuZhuanlanHandler(BaseHandler):
       self.finish('digest and fullonly cannot both be true.')
       return
 
-    baseurl = 'https://zhuanlan.zhihu.com/' + name
+    baseurl = f'https://zhuanlan.zhihu.com/{name}'
     res = await zhihulib.fetch_zhihu(baseurl)
     if res.code == 302:
       new_name = res.headers['Location'].rsplit('/', 1)[-1]
@@ -94,7 +94,7 @@ class ZhihuZhuanlanHandler(BaseHandler):
       self.redirect(re.sub(f'/{re.escape(name)}\\b', f'/{new_name}', url))
       return
 
-    url = 'https://zhuanlan.zhihu.com/api/columns/{}/articles?limit=20&include=data%5B*%5D.admin_closed_comment%2Ccomment_count%2Csuggest_edit%2Cis_title_image_full_screen%2Ccan_comment%2Cupvoted_followees%2Ccan_open_tipjar%2Ccan_tip%2Cvoteup_count%2Cvoting%2Ctopics%2Creview_info%2Cauthor.is_following%2Cis_labeled%2Clabel_info'.format(name)
+    url = f'https://zhuanlan.zhihu.com/api/columns/{name}/articles?limit=20&include=data%5B*%5D.admin_closed_comment%2Ccomment_count%2Csuggest_edit%2Cis_title_image_full_screen%2Ccan_comment%2Cupvoted_followees%2Ccan_open_tipjar%2Ccan_tip%2Cvoteup_count%2Cvoting%2Ctopics%2Creview_info%2Cauthor.is_following%2Cis_labeled%2Clabel_info'
     posts = await self._get_url(url)
 
     doc = fromstring(res.body.decode('utf-8'))
@@ -102,10 +102,7 @@ class ZhihuZhuanlanHandler(BaseHandler):
     column_info = tuple(info['initialState']['entities']['columns'].values())[0]
     name = column_info['title']
     description = column_info['description']
-    rss_info = {
-      'title': '%s - 知乎专栏' % name,
-      'description': description,
-    }
+    rss_info = {'title': f'{name} - 知乎专栏', 'description': description}
 
     rss = base.data2rss(
       baseurl,
@@ -121,44 +118,41 @@ class ZhihuZhuanlanHandler(BaseHandler):
 
   async def _get_url(self, url):
     res = await zhihulib.fetch_zhihu(url)
-    info = json.loads(res.body.decode('utf-8'))
-    return info
+    return json.loads(res.body.decode('utf-8'))
 
 def post2rss(baseurl, post, *, digest=False, pic=None, fullonly=False):
   url = post['url']
   if digest:
     content = post['excerpt']
     content = zhihulib.process_content_for_html(content, pic=pic)
+  elif article := article_from_cache(post['id'], post['updated']):
+    # logger.debug('cache hit for %s', post['id'])
+    base.STATSC.incr('zhihu.cache_hit')
+
+    content = article['content']
+    if pic:
+      doc = fromstring(content)
+      base.proxify_pic(doc, zhihulib.re_zhihu_img, pic)
+      content = tostring(doc, encoding=str)
+
   else:
-    article = article_from_cache(post['id'], post['updated'])
-    if not article:
-      base.STATSC.incr('zhihu.cache_miss')
-      try:
-        _article_q.put_nowait(str(post['id']))
-      except asyncio.QueueFull:
-        logger.warning('_article_q full')
-        base.STATSC.incr('zhihu.queue_full')
+    base.STATSC.incr('zhihu.cache_miss')
+    try:
+      _article_q.put_nowait(str(post['id']))
+    except asyncio.QueueFull:
+      logger.warning('_article_q full')
+      base.STATSC.incr('zhihu.queue_full')
 
-      if fullonly:
-        return None
+    if fullonly:
+      return None
 
-      content = post['excerpt'] + ' (全文尚不可用)'
-      content = zhihulib.process_content_for_html(content, pic=pic)
-
-    else:
-      # logger.debug('cache hit for %s', post['id'])
-      base.STATSC.incr('zhihu.cache_hit')
-
-      content = article['content']
-      if pic:
-        doc = fromstring(content)
-        base.proxify_pic(doc, zhihulib.re_zhihu_img, pic)
-        content = tostring(doc, encoding=str)
+    content = post['excerpt'] + ' (全文尚不可用)'
+    content = zhihulib.process_content_for_html(content, pic=pic)
 
   if post.get('title_image'):
     content = '<p><img src="%s"></p>' % post['title_image'] + content
 
-  item = PyRSS2Gen.RSSItem(
+  return PyRSS2Gen.RSSItem(
     title = post['title'].replace('\x08', ''),
     link = url,
     guid = url,
@@ -166,7 +160,6 @@ def post2rss(baseurl, post, *, digest=False, pic=None, fullonly=False):
     pubDate = datetime.datetime.utcfromtimestamp(post['updated']),
     author = post['author']['name'],
   )
-  return item
 
 def test(url):
   import requests
@@ -176,21 +169,20 @@ def test(url):
   s = requests.Session()
   s.headers['User-Agent'] = 'curl/7.50.1'
   # s.verify = False
-  url = 'https://zhuanlan.zhihu.com/api/columns/' + column
+  url = f'https://zhuanlan.zhihu.com/api/columns/{column}'
   info = s.get(url).json()
-  url = 'https://zhuanlan.zhihu.com/api/columns/%s/posts' % column
+  url = f'https://zhuanlan.zhihu.com/api/columns/{column}/posts'
   posts = s.get(url).json()
 
   rss_info = {
-    'title': '%s - 知乎专栏' % info['name'],
-    'description': info.get('description', ''),
+      'title': f"{info['name']} - 知乎专栏",
+      'description': info.get('description', ''),
   }
-  rss = base.data2rss(
+  return base.data2rss(
     baseurl,
     rss_info, posts,
     partial(post2rss, url, pic='cf'),
   )
-  return rss
 
 if __name__ == '__main__':
   import sys

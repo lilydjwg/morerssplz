@@ -27,13 +27,13 @@ class ZhihuAPI:
     :param name (str): Zhihu user ID e.g., lilydjwg
     :return (dict): deserialized user data
     """
-    url = 'moments/%s/activities' % name
+    url = f'moments/{name}/activities'
     query = {
       'desktop': 'True',
       'after_id': str(int(time.time())),
       'limit': '7',
     }
-    url += '?' + urlencode(query)
+    url += f'?{urlencode(query)}'
     data = await self.get_json(url, api_version='v3')
     return data
 
@@ -43,24 +43,24 @@ class ZhihuAPI:
     :param name (str): Zhihu user ID e.g., lilydjwg
     :return (dict): deserialized user pins data
     """
-    url = 'members/%s/pins/' % name
+    url = f'members/{name}/pins/'
     query = {
       'desktop': 'True',
       'after_id': str(int(time.time())),
       'limit': '7',
     }
-    url += '?' + urlencode(query)
+    url += f'?{urlencode(query)}'
     data = await self.get_json(url)
     return data
 
   async def collection_contents(self, id):
-    url = 'collections/%s/items' % id
+    url = f'collections/{id}/items'
     query = {
       'desktop': 'True',
       'after_id': str(int(time.time())),
       'limit': '7',
     }
-    url += '?' + urlencode(query)
+    url += f'?{urlencode(query)}'
     data = await self.get_json(url)
     return data
 
@@ -72,31 +72,31 @@ class ZhihuAPI:
     """
     url = ''
     if sort == 'hot':
-      url = 'topics/%s/feeds/top_activity' % id
+      url = f'topics/{id}/feeds/top_activity'
     elif sort == 'newest':
-      url = 'topics/%s/feeds/timeline_activity' % id
+      url = f'topics/{id}/feeds/timeline_activity'
     query = {
       'include': 'data[?*].target.content',
       'desktop': 'True',
       'limit': '7',
     }
-    url += '?' + urlencode(query)
+    url += f'?{urlencode(query)}'
     data = await self.get_json(url)
     return data
 
   async def answers(self, id, sort='created'):
-    url = 'https://api.zhihu.com/questions/%s/answers?sort_by=%s&include=content' % (id, sort)
+    url = f'https://api.zhihu.com/questions/{id}/answers?sort_by={sort}&include=content'
     query = {
       'desktop': 'True',
       'after_id': str(int(time.time())),
       'limit': '7',
     }
-    url += '&' + urlencode(query)
+    url += f'&{urlencode(query)}'
     data = await self.get_json(url)
     return data
 
   async def get_json(self, url, api_version='v4'):
-    baseurl = 'https://www.zhihu.com/api/%s/' % (api_version)
+    baseurl = f'https://www.zhihu.com/api/{api_version}/'
     url = urljoin(baseurl, url)
     headers = {
       'User-Agent': self.user_agent,
@@ -126,9 +126,7 @@ class ZhihuAPI:
     name = doc.xpath('//span[@class="name"]')[0].text_content()
     url = doc.xpath('//a[@class="avatar-link"]')[0].get('href')
 
-    # 知乎用户资料 - 一句话介绍
-    tagline = doc.xpath('//div[@class="tagline"]')
-    if tagline:
+    if tagline := doc.xpath('//div[@class="tagline"]'):
       headline = tagline[0].text_content()
     else:
       headline = ''
@@ -177,7 +175,7 @@ class ZhihuAPI:
     :param id (str): Zhihu collection id
     :return (dict): dict containing the collection's title, description, creator and URL
     """
-    url = 'collections/%s' % id
+    url = f'collections/{id}'
     data = await self.get_json(url)
     collection_data = data['collection']
 
@@ -194,7 +192,7 @@ class ZhihuAPI:
     :param id (str): Zhihu question id
     :return (dict): dict containing the question's title and URL
     """
-    url = 'https://api.zhihu.com/questions/%s?include=detail' % id
+    url = f'https://api.zhihu.com/questions/{id}?include=detail'
     data = await self.get_json(url)
 
     return {
@@ -208,10 +206,7 @@ zhihu_api = ZhihuAPI()
 async def activities2rss(name, digest=False, pic=None):
   info = await zhihu_api.card(name)
   url = info['url']
-  info = {
-    'title': '%s - 知乎动态' % info['name'],
-    'description': info['headline'],
-  }
+  info = {'title': f"{info['name']} - 知乎动态", 'description': info['headline']}
 
   posts = []
   page = 0
@@ -231,7 +226,7 @@ async def activities2rss(name, digest=False, pic=None):
     page += 1
 
   pins_data = await zhihu_api.pins(name)
-  pins = [pin for pin in pins_data['data']]
+  pins = list(pins_data['data'])
 
   posts = sorted(pins + posts, reverse=True, key=lambda t: t['created_time'] if t.get('created_time') else t['created'])
 
@@ -240,17 +235,13 @@ async def activities2rss(name, digest=False, pic=None):
     info, posts,
     partial(post2rss, digest=digest, pic=pic),
   )
-  xml = rss.to_xml(encoding='utf-8')
-  return xml
+  return rss.to_xml(encoding='utf-8')
 
 
 async def upvote2rss(name, digest=False, pic=None):
   info = await zhihu_api.card(name)
   url = info['url']
-  info = {
-    'title': '%s - 知乎赞同' % info['name'],
-    'description': info['headline'],
-  }
+  info = {'title': f"{info['name']} - 知乎赞同", 'description': info['headline']}
 
   page = 0
 
@@ -283,8 +274,7 @@ async def upvote2rss(name, digest=False, pic=None):
     info, vote_ups,
     partial(post2rss, digest=digest, pic=pic),
   )
-  xml = rss.to_xml(encoding='utf-8')
-  return xml
+  return rss.to_xml(encoding='utf-8')
 
 
 def pin_content(pin):
@@ -308,11 +298,8 @@ def pin_content(pin):
 
     merged_content += '回复<a href="https://www.zhihu.com/people/%s" target="_blank" rel="nofollow noreferrer">%s</a>的<a href="https://www.zhihu.com/pin/%s" target="_blank" rel="nofollow noreferrer">想法</a>' % (origin_pin['author']['id'], origin_pin['author']['name'], origin_pin['id']) + '：<br><br>'
 
-    if not origin_pin['is_deleted']:
-      merged_content += pin_content(origin_pin)
-    else:
-      merged_content += origin_pin['deleted_reason']
-
+    merged_content += (origin_pin['deleted_reason'] if origin_pin['is_deleted']
+                       else pin_content(origin_pin))
   return merged_content
 
 
@@ -321,18 +308,11 @@ def post_content(post, digest=False):
 
   # question preview has neither "excerpt" nor "content"
   if post['type'] == 'question':
-    content = post['title']
-  elif digest:
-    content = post['excerpt']
-  # Posts in Zhihu topics API response don't have the 'content' key by default
-  # Although they can include it by carrying verbose query params
-  # which are hard to maintain because Zhihu doesn't have public API documentation :(
-  elif 'content' not in post:
-    content = post['excerpt']
+    return post['title']
+  elif digest or 'content' not in post:
+    return post['excerpt']
   else:
-    content = post['content']
-
-  return content
+    return post['content']
 
 
 def post2rss(post, digest=False, pic=None, extra_types=()):

@@ -39,16 +39,14 @@ class BaseHandler(web.RequestHandler):
       self.finish()
     else:
       err_exc = kwargs.get('exc_info', '  ')[1]
-      if err_exc in (None, ' '):
+      if (err_exc not in (None, ' ') and isinstance(err_exc, web.HTTPError)
+          and err_exc.log_message is not None):
+        err_msg = f'{str(err_exc.log_message)}.'
+      elif (err_exc not in (None, ' ') and isinstance(err_exc, web.HTTPError)
+            or err_exc in (None, ' ')):
         err_msg = ''
       else:
-        if isinstance(err_exc, web.HTTPError):
-          if err_exc.log_message is not None:
-            err_msg = str(err_exc.log_message) + '.'
-          else:
-            err_msg = ''
-        else:
-          err_msg = str(err_exc) + '.'
+        err_msg = f'{str(err_exc)}.'
 
       if status_code in [302, 400, 403, 404, 405]:
         # cache some errors
@@ -69,25 +67,24 @@ class BaseHandler(web.RequestHandler):
 def data2rss(url, info, data, transform_func):
   items = [transform_func(x) for x in data]
   items = [x for x in items if x]
-  rss = PyRSS2Gen.RSS2(
-    title = info['title'],
-    link = url,
-    lastBuildDate = datetime.datetime.now(),
-    items = items,
-    generator = 'morerssplz %s' % (__version__),
-    description = info['description'],
+  return PyRSS2Gen.RSS2(
+      title=info['title'],
+      link=url,
+      lastBuildDate=datetime.datetime.now(),
+      items=items,
+      generator=f'morerssplz {__version__}',
+      description=info['description'],
   )
-  return rss
 
 def _proxify_url_cf(url):
   if url.startswith('http://'):
     url = url[7:]
   elif url.startswith('https://'):
-    url = 'ssl:' + url[8:]
+    url = f'ssl:{url[8:]}'
   else:
     logger.error('bad image url: %s', url)
     url = url
-  return 'https://images.weserv.nl/?url=%s' % url
+  return f'https://images.weserv.nl/?url={url}'
 
 def _proxify_url_google(url):
   return 'https://images1-focus-opensocial.googleusercontent.com/gadgets/proxy?url=' + quote(url) + '&container=focus'
@@ -110,6 +107,4 @@ class MyApp(web.Application):
 
     code = handler.get_status()
     request_time = 1000.0 * handler.request.request_time()
-    STATSC.timing('handler.%s.%s' % (
-      handler.__class__.__name__, code,
-    ), request_time)
+    STATSC.timing(f'handler.{handler.__class__.__name__}.{code}', request_time)

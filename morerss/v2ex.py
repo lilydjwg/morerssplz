@@ -12,7 +12,7 @@ httpclient = AsyncHTTPClient()
 
 class V2exCommentHandler(BaseHandler):
   async def get(self, tid):
-    url = 'https://www.v2ex.com/t/' + tid
+    url = f'https://www.v2ex.com/t/{tid}'
     webpage = await self._get_url(url)
 
     try:
@@ -30,8 +30,8 @@ class V2exCommentHandler(BaseHandler):
       raise web.HTTPError(403, 'login required')
 
     rss_info = {
-      'title': '[评论] %s' % data['subject'],
-      'description': data['description'],
+        'title': f"[评论] {data['subject']}",
+        'description': data['description'],
     }
 
     rss = base.data2rss(
@@ -53,25 +53,24 @@ class V2exCommentHandler(BaseHandler):
 
 def comment2rss(url, comment):
   rid = comment.get('id')
-  url = '%s#%s' % (url, rid)
+  url = f'{url}#{rid}'
   content = comment.xpath('.//div[@class="reply_content"]')[0]
   author = comment.xpath('.//strong/a')[0].text
   content_text = content.text_content()
   if len(content_text) > 30:
-    title = "%s 说: %s……" % (author, content_text[:30])
+    title = f"{author} 说: {content_text[:30]}……"
   else:
-    title = "%s 说: %s" % (author, content_text)
+    title = f"{author} 说: {content_text}"
 
   content = tostring(content, encoding=str).strip().replace('\r', '')
 
-  item = PyRSS2Gen.RSSItem(
+  return PyRSS2Gen.RSSItem(
     title = title,
     link = url,
     guid = url,
     description = content,
     author = author,
   )
-  return item
 
 def parse_webpage(body, baseurl):
   doc = fromstring(body, base_url=baseurl)
@@ -86,11 +85,7 @@ def parse_webpage(body, baseurl):
   comments = comments[-40:]
   comments.reverse()
   prev = doc.xpath('//link[@rel="prev"]')
-  if prev:
-    prev = prev[0].get('href')
-  else:
-    prev = None
-
+  prev = prev[0].get('href') if prev else None
   return {
     'subject': subject,
     'description': description,
@@ -108,16 +103,15 @@ def test():
   data = parse_webpage(r.text, baseurl=url)
 
   rss_info = {
-    'title': '[评论] %s' % data['subject'],
-    'description': data['description'],
+      'title': f"[评论] {data['subject']}",
+      'description': data['description'],
   }
-  rss = base.data2rss(
+  return base.data2rss(
     url,
     rss_info,
     data['comments'],
     partial(comment2rss, url),
   )
-  return rss
 
 if __name__ == '__main__':
   import sys
