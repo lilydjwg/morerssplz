@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# vim:fileencoding=utf-8
 
 import os
 import asyncio
@@ -28,6 +27,7 @@ from morerss import (
   MattersFeedHandler,
   MattersTopicHandler,
   MattersUserHandler,
+  GogsIssueHandler,
 )
 from morerss.base import MyApp
 
@@ -48,6 +48,7 @@ routers = [
   (r'/matters/feed', MattersFeedHandler),
   (r'/matters/topic/([^/]+)', MattersTopicHandler),
   (r'/matters/user/([^/]+)', MattersUserHandler),
+  (r'/gogs/([^/]+)/([^/]+)/([^/]+)/issues/(\d+)', GogsIssueHandler),
 ]
 
 def main():

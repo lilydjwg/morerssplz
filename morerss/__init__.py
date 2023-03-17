@@ -20,3 +20,4 @@ from .zhihu_stream import ZhihuQuestionHandler
 from .v2ex import V2exCommentHandler
 from .static_zhihu import StaticZhihuHandler
 from .telegram import TGChannelHandler
+from .gogs import GogsIssueHandler
