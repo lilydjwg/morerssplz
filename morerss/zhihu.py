@@ -100,6 +100,12 @@ class ZhihuZhuanlanHandler(BaseHandler):
 
     doc = fromstring(res.body.decode('utf-8'))
     info = json.loads(doc.xpath('//script[@id="js-initialData"]')[0].text_content())
+    if info.get('spanName') == 'NotFoundErrorPage':
+      self.set_status(404)
+      self.set_header('Content-Type', 'text/plain')
+      self.finish('no such column')
+      return
+
     column_info = tuple(info['initialState']['entities']['columns'].values())[0]
     name = column_info['title']
     description = column_info['description']
