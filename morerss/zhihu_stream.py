@@ -499,6 +499,9 @@ async def topic2rss(id, sort='hot', pic=None):
 
   page = 0
   data = await zhihu_api.topic(id, sort)
+  if error := data.get('error'):
+    raise Exception(error['message'])
+
   posts = [x['target'] for x in data['data']]
 
   while len(posts) < 20 and page < 3:
@@ -587,7 +590,13 @@ class ZhihuTopic(base.BaseHandler):
       # Sort by popularity by default
       sort = 'hot'
     pic = self.get_argument('pic', None)
-    rss = await topic2rss(id, sort=sort, pic=pic)
+    try:
+      rss = await topic2rss(id, sort=sort, pic=pic)
+    except Exception as e:
+      self.set_status(500)
+      self.set_header('Content-Type', 'text/plain; charset=utf-8')
+      self.finish(str(e))
+      return
     self.finish(rss)
 
 class ZhihuCollectionHandler(base.BaseHandler):
