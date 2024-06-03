@@ -38,6 +38,7 @@ async def _article_fetcher():
   while True:
     try:
       id = await _article_q.get()
+      continue # no longer works
       logger.info('fetching zhihu article %s', id)
       start_time = time.time()
       article = await zhihulib.fetch_article(id, pic=None)
@@ -142,7 +143,7 @@ def post2rss(baseurl, post, *, digest=False, pic=None, fullonly=False):
       if fullonly:
         return None
 
-      content = post['excerpt'] + ' (全文尚不可用)'
+      content = post['excerpt'] + ' (全文不可用)'
       content = zhihulib.process_content_for_html(content, pic=pic)
 
     else:
