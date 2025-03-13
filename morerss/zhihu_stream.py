@@ -19,7 +19,7 @@ ACCEPT_VERBS = ['MEMBER_CREATE_ARTICLE', 'ANSWER_CREATE']
 VOTEUP_VERBS = ['MEMBER_VOTEUP_ARTICLE', 'ANSWER_VOTE_UP']
 
 class ZhihuAPI:
-  user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:63.0) Gecko/20100101 Firefox/63.0'
+  user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0'
 
   async def activities(self, name):
     """
@@ -545,6 +545,8 @@ async def question2rss(id, sort='created', pic=None):
   page = 0
   data = await zhihu_api.answers(id, sort)
 
+  if err := data.get('error'):
+    raise web.HTTPError(503, '知乎报错：' + err['message'])
   answers = [{**x, 'type': 'QUESTION_ANSWER'} for x in data['data']]
 
   while len(answers) < 20 and page < 3:
@@ -570,6 +572,8 @@ class ZhihuStream(base.BaseHandler):
   async def get(self, name):
     if name.endswith(' '):
       raise web.HTTPError(404)
+    self.set_header('Cache-Control', 'public, max-age=86400')
+    raise web.HTTPError(503, 'no longer supported; pull request welcome')
     pic = self.get_argument('pic', None)
     digest = self.get_argument('digest', False) == 'true'
 
@@ -613,6 +617,8 @@ class ZhihuUpvoteHandler(base.BaseHandler):
   async def get(self, name):
     if name.endswith(' '):
       raise web.HTTPError(404)
+    self.set_header('Cache-Control', 'public, max-age=86400')
+    raise web.HTTPError(503, 'no longer supported; pull request welcome')
 
     pic = self.get_argument('pic', None)
     digest = self.get_argument('digest', False) == 'true'
@@ -633,7 +639,11 @@ class ZhihuQuestionHandler(base.BaseHandler):
 
     pic = self.get_argument('pic', None)
 
-    rss = await question2rss(id, sort=sort, pic=pic)
+    try:
+      rss = await question2rss(id, sort=sort, pic=pic)
+    except web.HTTPError:
+      self.set_header('Cache-Control', 'public, max-age=86400')
+      raise
 
     self.finish(rss)
 

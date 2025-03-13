@@ -66,7 +66,7 @@ class ZhihuManager:
     if url.startswith('http://'):
       url = 'https://' + url[len('http://'):]
     kwargs.setdefault('follow_redirects', False)
-    kwargs.setdefault('user_agent', 'Mozilla/5.0 (X11; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0')
+    kwargs.setdefault('user_agent', 'Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0')
     kwargs.pop('raise_error', None)
 
     res = await self._do_fetch(url, kwargs)
