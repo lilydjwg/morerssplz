@@ -11,7 +11,14 @@ import PyRSS2Gen
 from lxml.html import fromstring, tostring
 
 from . import base
-from .zhihulib import fetch_zhihu, re_zhihu_img, tidy_content
+from .zhihulib import (
+  fetch_zhihu,
+  fxzhihu_links,
+  fxzhihu_url,
+  re_zhihu_img,
+  tidy_content,
+  use_fxzhihu,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -205,7 +212,7 @@ class ZhihuAPI:
 
 zhihu_api = ZhihuAPI()
 
-async def activities2rss(name, digest=False, pic=None):
+async def activities2rss(name, digest=False, pic=None, fxzhihu=False):
   info = await zhihu_api.card(name)
   url = info['url']
   info = {
@@ -236,15 +243,15 @@ async def activities2rss(name, digest=False, pic=None):
   posts = sorted(pins + posts, reverse=True, key=lambda t: t['created_time'] if t.get('created_time') else t['created'])
 
   rss = base.data2rss(
-    url,
+    fxzhihu_url(url) if fxzhihu else url,
     info, posts,
-    partial(post2rss, digest=digest, pic=pic),
+    partial(post2rss, digest=digest, pic=pic, fxzhihu=fxzhihu),
   )
   xml = rss.to_xml(encoding='utf-8')
   return xml
 
 
-async def upvote2rss(name, digest=False, pic=None):
+async def upvote2rss(name, digest=False, pic=None, fxzhihu=False):
   info = await zhihu_api.card(name)
   url = info['url']
   info = {
@@ -279,9 +286,9 @@ async def upvote2rss(name, digest=False, pic=None):
     page += 1
 
   rss = base.data2rss(
-    url,
+    fxzhihu_url(url) if fxzhihu else url,
     info, vote_ups,
-    partial(post2rss, digest=digest, pic=pic),
+    partial(post2rss, digest=digest, pic=pic, fxzhihu=fxzhihu),
   )
   xml = rss.to_xml(encoding='utf-8')
   return xml
@@ -335,7 +342,7 @@ def post_content(post, digest=False):
   return content
 
 
-def post2rss(post, digest=False, pic=None, extra_types=()):
+def post2rss(post, digest=False, pic=None, extra_types=(), fxzhihu=False):
   """
   :param post (dict): 帖子数据
   :param digest (bool): 输出摘要
@@ -433,6 +440,9 @@ def post2rss(post, digest=False, pic=None, extra_types=()):
   tidy_content(doc)
   if pic:
     base.proxify_pic(doc, re_zhihu_img, pic)
+  if fxzhihu:
+    url = fxzhihu_url(url)
+    fxzhihu_links(doc)
   content = tostring(doc, encoding=str)
 
   pub_date = datetime.datetime.utcfromtimestamp(t_c)
@@ -448,7 +458,7 @@ def post2rss(post, digest=False, pic=None, extra_types=()):
   return item
 
 
-async def collection2rss(id, pic=None):
+async def collection2rss(id, pic=None, fxzhihu=False):
   info = await zhihu_api.collection_info(id)
   url = info['url']
   info = {
@@ -477,15 +487,15 @@ async def collection2rss(id, pic=None):
     page += 1
 
   rss = base.data2rss(
-    url,
+    fxzhihu_url(url) if fxzhihu else url,
     info, collection_contents,
-    partial(post2rss, pic=pic)
+    partial(post2rss, pic=pic, fxzhihu=fxzhihu)
   )
   xml = rss.to_xml(encoding='utf-8')
   return xml
 
 
-async def topic2rss(id, sort='hot', pic=None):
+async def topic2rss(id, sort='hot', pic=None, fxzhihu=False):
   info = await zhihu_api.topic_info(id)
   url = info.get('url')
   if sort == 'hot':
@@ -519,16 +529,16 @@ async def topic2rss(id, sort='hot', pic=None):
     page += 1
 
   rss = base.data2rss(
-    url,
+    fxzhihu_url(url) if fxzhihu else url,
     info, posts,
     # include question posts
-    partial(post2rss, pic=pic, extra_types=('question'))
+    partial(post2rss, pic=pic, extra_types=('question'), fxzhihu=fxzhihu)
   )
   xml = rss.to_xml(encoding='utf-8')
   return xml
 
 
-async def question2rss(id, sort='created', pic=None):
+async def question2rss(id, sort='created', pic=None, fxzhihu=False):
   info = await zhihu_api.question_info(id)
   url = info['url']
 
@@ -559,9 +569,9 @@ async def question2rss(id, sort='created', pic=None):
     page += 1
 
   rss = base.data2rss(
-    url,
+    fxzhihu_url(url) if fxzhihu else url,
     info, answers,
-    partial(post2rss, pic=pic)
+    partial(post2rss, pic=pic, fxzhihu=fxzhihu)
   )
   xml = rss.to_xml(encoding='utf-8')
 
@@ -576,8 +586,9 @@ class ZhihuStream(base.BaseHandler):
     raise web.HTTPError(503, 'no longer supported; pull request welcome')
     pic = self.get_argument('pic', None)
     digest = self.get_argument('digest', False) == 'true'
+    fxzhihu = use_fxzhihu(self)
 
-    rss = await activities2rss(name, digest=digest, pic=pic)
+    rss = await activities2rss(name, digest=digest, pic=pic, fxzhihu=fxzhihu)
     self.finish(rss)
 
 class ZhihuTopic(base.BaseHandler):
@@ -594,8 +605,9 @@ class ZhihuTopic(base.BaseHandler):
       # Sort by popularity by default
       sort = 'hot'
     pic = self.get_argument('pic', None)
+    fxzhihu = use_fxzhihu(self)
     try:
-      rss = await topic2rss(id, sort=sort, pic=pic)
+      rss = await topic2rss(id, sort=sort, pic=pic, fxzhihu=fxzhihu)
     except Exception as e:
       self.set_status(500)
       self.set_header('Content-Type', 'text/plain; charset=utf-8')
@@ -609,7 +621,8 @@ class ZhihuCollectionHandler(base.BaseHandler):
       raise web.HTTPError(404)
 
     pic = self.get_argument('pic', None)
-    rss = await collection2rss(id, pic=pic)
+    fxzhihu = use_fxzhihu(self)
+    rss = await collection2rss(id, pic=pic, fxzhihu=fxzhihu)
 
     self.finish(rss)
 
@@ -622,8 +635,9 @@ class ZhihuUpvoteHandler(base.BaseHandler):
 
     pic = self.get_argument('pic', None)
     digest = self.get_argument('digest', False) == 'true'
+    fxzhihu = use_fxzhihu(self)
 
-    rss = await upvote2rss(name, digest=digest, pic=pic)
+    rss = await upvote2rss(name, digest=digest, pic=pic, fxzhihu=fxzhihu)
 
     self.finish(rss)
 
@@ -638,9 +652,10 @@ class ZhihuQuestionHandler(base.BaseHandler):
       sort = 'created'
 
     pic = self.get_argument('pic', None)
+    fxzhihu = use_fxzhihu(self)
 
     try:
-      rss = await question2rss(id, sort=sort, pic=pic)
+      rss = await question2rss(id, sort=sort, pic=pic, fxzhihu=fxzhihu)
     except web.HTTPError:
       self.set_header('Cache-Control', 'public, max-age=86400')
       raise

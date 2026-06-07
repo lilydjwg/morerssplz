@@ -81,6 +81,7 @@ class ZhihuZhuanlanHandler(BaseHandler):
     pic = self.get_argument('pic', None)
     digest = self.get_argument('digest', False) == 'true'
     fullonly = self.get_argument('fullonly', False) == 'true'
+    fxzhihu = zhihulib.use_fxzhihu(self)
     if digest and fullonly:
       self.set_status(400)
       self.set_header('Content-Type', 'text/plain')
@@ -115,12 +116,13 @@ class ZhihuZhuanlanHandler(BaseHandler):
     }
 
     rss = base.data2rss(
-      baseurl,
+      zhihulib.fxzhihu_url(baseurl) if fxzhihu else baseurl,
       rss_info, posts['data'],
       partial(
         post2rss, url,
         digest = digest, pic = pic,
         fullonly = fullonly,
+        fxzhihu = fxzhihu,
       ),
     )
     xml = rss.to_xml(encoding='utf-8')
@@ -131,7 +133,8 @@ class ZhihuZhuanlanHandler(BaseHandler):
     info = json.loads(res.body.decode('utf-8'))
     return info
 
-def post2rss(baseurl, post, *, digest=False, pic=None, fullonly=False):
+def post2rss(baseurl, post, *, digest=False, pic=None, fullonly=False,
+             fxzhihu=False):
   url = post['url']
   if digest:
     content = post['excerpt']
@@ -157,13 +160,22 @@ def post2rss(baseurl, post, *, digest=False, pic=None, fullonly=False):
       base.STATSC.incr('zhihu.cache_hit')
 
       content = article['content']
-      if pic:
+      if pic or fxzhihu:
         doc = fromstring(content)
-        base.proxify_pic(doc, zhihulib.re_zhihu_img, pic)
+        if pic:
+          base.proxify_pic(doc, zhihulib.re_zhihu_img, pic)
+        if fxzhihu:
+          zhihulib.fxzhihu_links(doc)
         content = tostring(doc, encoding=str)
 
   if post.get('title_image'):
     content = '<p><img src="%s"></p>' % post['title_image'] + content
+
+  if fxzhihu:
+    url = zhihulib.fxzhihu_url(url)
+    doc = fromstring(content)
+    zhihulib.fxzhihu_links(doc)
+    content = tostring(doc, encoding=str)
 
   item = PyRSS2Gen.RSSItem(
     title = post['title'].replace('\x08', ''),

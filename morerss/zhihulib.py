@@ -1,7 +1,7 @@
 import logging
 import json
 from typing import Optional
-from urllib.parse import urlsplit, parse_qs
+from urllib.parse import urlsplit, urlunsplit, parse_qs
 import re
 import itertools
 
@@ -19,6 +19,12 @@ except ImportError:
 _httpclient = httpclient.AsyncHTTPClient()
 logger = logging.getLogger(__name__)
 re_zhihu_img = re.compile(r'https://\w+\.zhimg\.com/.+')
+
+FXZHIHU_HOSTS = {
+  'www.zhihu.com': 'www.fxzhihu.com',
+  'zhihu.com': 'www.fxzhihu.com',
+  'zhuanlan.zhihu.com': 'zhuanlan.fxzhihu.com',
+}
 
 define("zhihu-proxy", default=False,
         help="use proxies for zhihu", type=bool)
@@ -97,6 +103,31 @@ class ZhihuManager:
     return res
 
 fetch_zhihu = ZhihuManager().fetch_zhihu
+
+def fxzhihu_url(url):
+  parts = urlsplit(url)
+  host = FXZHIHU_HOSTS.get(parts.netloc)
+  if not host:
+    return url
+  return urlunsplit((
+    parts.scheme,
+    host,
+    parts.path,
+    parts.query,
+    parts.fragment,
+  ))
+
+def use_fxzhihu(handler):
+  arg = handler.get_argument('fxzhihu', None)
+  if arg is None:
+    return False
+  if arg == '':
+    return True
+  return arg.lower() in ('1', 'true', 'yes', 'on')
+
+def fxzhihu_links(doc):
+  for a in doc.xpath('//a[@href]'):
+    a.set('href', fxzhihu_url(a.get('href')))
 
 def process_content_for_html(body, pic):
   doc = fromstring(body)
@@ -185,4 +216,3 @@ def tidy_content(doc):
         del a.attrib[k]
       except KeyError:
         pass
-
